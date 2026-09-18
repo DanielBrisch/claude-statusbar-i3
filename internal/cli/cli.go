@@ -139,12 +139,6 @@ func (a *App) render(args []string) (int, error) {
 	}
 	opts := a.options(o)
 
-	if *format == "i3blocks" && a.env("BLOCK_BUTTON") == "1" {
-		if err := a.notifier(a.Stderr).Send(notificationTitle, render.Detail(snap, opts)); err != nil {
-			fmt.Fprintln(a.Stderr, err)
-		}
-	}
-
 	var out string
 	switch *format {
 	case "i3blocks":
@@ -167,7 +161,7 @@ func (a *App) render(args []string) (int, error) {
 			fmt.Fprintln(a.Stdout)
 		}
 	}
-	if *format == "i3blocks" && render.Compact(snap, opts).Level == usage.LevelUrgent {
+	if *format == "i3blocks" && *o.urgentExit && render.Compact(snap, opts).Level == usage.LevelUrgent {
 		return i3blocksUrgent, nil
 	}
 	return 0, nil
@@ -250,34 +244,42 @@ type renderOptions struct {
 	label       *string
 	weeklyLabel *string
 	template    *string
+	markup      *string
+	iconSize    *string
 	warn        *float64
 	crit        *float64
 	urgent      *float64
 	colorWarn   *string
 	colorCrit   *string
+	urgentExit  *bool
 }
 
 func (a *App) renderFlags(fs *flag.FlagSet) *renderOptions {
 	d := usage.DefaultThresholds()
 	c := render.DefaultColors()
 	return &renderOptions{
-		label:       fs.String("label", "CC", "prefix for the session segment"),
-		weeklyLabel: fs.String("weekly-label", "S", "prefix for the weekly segment"),
+		label:       fs.String("label", render.DefaultLabel, "prefix for the session segment"),
+		weeklyLabel: fs.String("weekly-label", render.DefaultWeeklyLabel, "prefix for the weekly segment"),
 		template:    fs.String("template", "", "custom layout, e.g. '{label} {session_pct} {session_reset}'"),
+		markup:      fs.String("markup", string(render.MarkupNone), "none|pango; pango lets the icon be enlarged, and your bar must be told to parse it"),
+		iconSize:    fs.String("icon-size", render.DefaultIconSize, "pango size for the icon when --markup pango: small, medium, large, x-large, xx-large"),
 		warn:        fs.Float64("warn", d.Warn, "percentage that turns the block yellow"),
 		crit:        fs.Float64("crit", d.Crit, "percentage that turns the block red"),
 		urgent:      fs.Float64("urgent", d.Urgent, "percentage that marks the block urgent"),
-		colorWarn:   fs.String("color-warn", c.Warn, "hex colour for the warn level"),
-		colorCrit:   fs.String("color-crit", c.Crit, "hex colour for the crit level"),
+		colorWarn:   fs.String("color-warn", c.Warn, "hex colour once --warn is crossed; empty keeps your bar's own text colour"),
+		colorCrit:   fs.String("color-crit", c.Crit, "hex colour once --crit is crossed; empty keeps your bar's own text colour"),
+		urgentExit:  fs.Bool("urgent-exit", false, "exit 33 past --urgent so i3blocks marks the block urgent, which recolours it"),
 	}
 }
 
 func defaultRenderOptions() *renderOptions {
 	d := usage.DefaultThresholds()
 	c := render.DefaultColors()
-	label, weekly, empty := "CC", "S", ""
+	label, weekly, empty := render.DefaultLabel, render.DefaultWeeklyLabel, ""
+	markup, iconSize := string(render.MarkupNone), render.DefaultIconSize
 	return &renderOptions{
 		label: &label, weeklyLabel: &weekly, template: &empty,
+		markup: &markup, iconSize: &iconSize, urgentExit: new(bool),
 		warn: &d.Warn, crit: &d.Crit, urgent: &d.Urgent,
 		colorWarn: &c.Warn, colorCrit: &c.Crit,
 	}
@@ -289,6 +291,8 @@ func (a *App) options(o *renderOptions) render.Options {
 		Label:       *o.label,
 		WeeklyLabel: *o.weeklyLabel,
 		Template:    *o.template,
+		Markup:      render.Markup(*o.markup),
+		IconSize:    *o.iconSize,
 		Thresholds:  usage.Thresholds{Warn: *o.warn, Crit: *o.crit, Urgent: *o.urgent},
 		Colors:      render.Colors{Warn: *o.colorWarn, Crit: *o.colorCrit},
 	}

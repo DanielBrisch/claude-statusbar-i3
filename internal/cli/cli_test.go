@@ -100,14 +100,14 @@ func TestCollectStoresStateAndEchoesTheCompactLine(t *testing.T) {
 	if code := h.run(payloadJSON(63), "collect"); code != 0 {
 		t.Fatalf("collect exit = %d, stderr = %s", code, h.stderr)
 	}
-	if got, want := strings.TrimSpace(h.stdout.String()), "CC 63% 1h42 │ S 21% 4d"; got != want {
+	if got, want := strings.TrimSpace(h.stdout.String()), "✳ 63% 1h42 │ week 21% 4d"; got != want {
 		t.Errorf("collect stdout = %q, want %q", got, want)
 	}
 
 	if code := h.run("", "render", "--format", "plain"); code != 0 {
 		t.Fatalf("render exit = %d, stderr = %s", code, h.stderr)
 	}
-	if got, want := strings.TrimSpace(h.stdout.String()), "CC 63% 1h42 │ S 21% 4d"; got != want {
+	if got, want := strings.TrimSpace(h.stdout.String()), "✳ 63% 1h42 │ week 21% 4d"; got != want {
 		t.Errorf("render stdout = %q, want %q", got, want)
 	}
 }
@@ -160,12 +160,34 @@ func TestRenderOnAnEmptyStateIsSilentAndSuccessful(t *testing.T) {
 	}
 }
 
-func TestRenderExitsThirtyThreeWhenUrgent(t *testing.T) {
+func TestRenderStaysQuietAtUrgentByDefault(t *testing.T) {
 	h := newHarness(t)
 	h.run(payloadJSON(97), "collect", "--print", "none")
 
-	if code := h.run("", "render", "--format", "i3blocks"); code != 33 {
+	if code := h.run("", "render", "--format", "i3blocks"); code != 0 {
+		t.Errorf("render exit = %d, want 0 — exit 33 recolours the block, so it is opt-in", code)
+	}
+	if strings.Contains(h.stdout.String(), "#") {
+		t.Errorf("stdout = %q, want no colour line by default", h.stdout)
+	}
+}
+
+func TestRenderExitsThirtyThreeWhenUrgentExitIsAskedFor(t *testing.T) {
+	h := newHarness(t)
+	h.run(payloadJSON(97), "collect", "--print", "none")
+
+	if code := h.run("", "render", "--format", "i3blocks", "--urgent-exit"); code != 33 {
 		t.Errorf("render exit = %d, want 33 (i3blocks urgent)", code)
+	}
+}
+
+func TestRenderEmitsTheColourLineOnlyWhenOneIsConfigured(t *testing.T) {
+	h := newHarness(t)
+	h.run(payloadJSON(97), "collect", "--print", "none")
+
+	h.run("", "render", "--format", "i3blocks", "--color-crit", "#E06C75")
+	if !strings.Contains(h.stdout.String(), "#E06C75") {
+		t.Errorf("stdout = %q, want the configured colour", h.stdout)
 	}
 }
 
@@ -173,7 +195,7 @@ func TestRenderDoesNotExitThirtyThreeForOtherFormats(t *testing.T) {
 	h := newHarness(t)
 	h.run(payloadJSON(97), "collect", "--print", "none")
 
-	if code := h.run("", "render", "--format", "waybar"); code != 0 {
+	if code := h.run("", "render", "--format", "waybar", "--urgent-exit"); code != 0 {
 		t.Errorf("render exit = %d, want 0 — exit 33 is an i3blocks convention", code)
 	}
 }
@@ -187,38 +209,26 @@ func TestRenderWaybarIsValidJSON(t *testing.T) {
 	if err := json.Unmarshal(h.stdout.Bytes(), &out); err != nil {
 		t.Fatalf("waybar output is not JSON: %v\n%s", err, h.stdout)
 	}
-	if out["text"] != "CC 63% 1h42 │ S 21% 4d" {
+	if out["text"] != "✳ 63% 1h42 │ week 21% 4d" {
 		t.Errorf("text = %v", out["text"])
 	}
 }
 
-func TestLeftClickOnTheI3blocksBlockSendsTheDetailNotification(t *testing.T) {
+func TestClickingTheI3blocksBlockDoesNothing(t *testing.T) {
 	h := newHarness(t)
 	h.run(payloadJSON(63), "collect", "--print", "none")
 
-	h.env["BLOCK_BUTTON"] = "1"
-	h.run("", "render", "--format", "i3blocks")
-
-	if h.notifier.sent != 1 {
-		t.Fatalf("notifier called %d times, want 1", h.notifier.sent)
+	for _, button := range []string{"1", "2", "3", "4", "5"} {
+		h.env["BLOCK_BUTTON"] = button
+		if code := h.run("", "render", "--format", "i3blocks"); code != 0 {
+			t.Errorf("button %s: exit = %d", button, code)
+		}
 	}
-	if !strings.Contains(h.notifier.body, "Weekly") {
-		t.Errorf("notification body = %q, want the detail", h.notifier.body)
-	}
-	if h.stdout.Len() == 0 {
-		t.Error("the block must still print its text after handling a click")
-	}
-}
-
-func TestOtherMouseButtonsDoNotNotify(t *testing.T) {
-	h := newHarness(t)
-	h.run(payloadJSON(63), "collect", "--print", "none")
-
-	h.env["BLOCK_BUTTON"] = "4"
-	h.run("", "render", "--format", "i3blocks")
-
 	if h.notifier.sent != 0 {
-		t.Errorf("notifier called %d times on scroll, want 0", h.notifier.sent)
+		t.Errorf("notifier called %d times, want 0 — the icon makes the block self-explanatory, so the click no longer pops anything", h.notifier.sent)
+	}
+	if !strings.HasPrefix(h.stdout.String(), "\u2733 63%") {
+		t.Errorf("the block must still render normally, got %q", h.stdout)
 	}
 }
 
@@ -355,29 +365,6 @@ func TestCollectPassthroughFeedsTheOriginalPayloadOnward(t *testing.T) {
 	}
 	if !strings.Contains(h.stdout.String(), fmt.Sprintf("passthrough saw %d bytes", len(in))) {
 		t.Errorf("stdout = %q, want the passthrough output built from the full payload", h.stdout)
-	}
-}
-
-func TestAFailingNotificationNeverContaminatesTheBlock(t *testing.T) {
-	h := newHarness(t)
-	h.notifier.fallback = true
-	h.run(payloadJSON(63), "collect", "--print", "none")
-
-	h.env["BLOCK_BUTTON"] = "1"
-	h.run("", "render", "--format", "i3blocks")
-
-	lines := strings.Split(strings.TrimRight(h.stdout.String(), "\n"), "\n")
-	if len(lines) != 3 {
-		t.Fatalf("stdout has %d lines, want exactly the 3 block lines (full, short, colour) — a notifier that falls back to text must not write to the block:\n%s", len(lines), h.stdout)
-	}
-	if strings.Contains(h.stdout.String(), "Weekly") || strings.Contains(h.stdout.String(), notificationTitle) {
-		t.Errorf("the notification leaked into the block:\n%s", h.stdout)
-	}
-	if lines[0] != "CC 63% 1h42 │ S 21% 4d" {
-		t.Errorf("full_text = %q", lines[0])
-	}
-	if !strings.Contains(h.stderr.String(), "Weekly") {
-		t.Errorf("the fallback text should land on stderr, got stderr = %q", h.stderr)
 	}
 }
 

@@ -16,7 +16,8 @@ and put `"custom/claude"` in one of the `modules-*` arrays.
 The JSON carries `text`, `tooltip`, `class` and `percentage`, so waybar shows the full
 breakdown on hover with no extra work.
 
-Style it by level:
+The module never sets a colour itself — it reports the level as a CSS class and leaves the
+styling to you. Nothing is coloured until you write something like:
 
 ```css
 #custom-claude.warn   { color: #e5c07b; }

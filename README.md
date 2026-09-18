@@ -1,23 +1,28 @@
-# claude-statusbar
+# claude-usage-status-i3
 
 Claude Code's `/usage` numbers on your status bar.
 
 ```
-… TEMP 52°C │ CC 63% 1h42 │ S 21% 4d │ 🔊 40% …
-                └── 5-hour window       └── weekly window
-                    63% used, resets         21% used, resets
-                    in 1h42                  in 4 days
+… TEMP 52°C │ ✳ 63% 1h42 │ week 21% 4d │ 🔊 40% …
+              └── 5-hour window └── weekly window
+                  63% used,         21% used,
+                  resets in 1h42    resets in 4 days
 ```
 
-Left-click the block for the full breakdown:
+The block is meant to be read at a glance and nothing else: everything it knows is
+already on the bar. Bars that give it away for free show more on hover, and
+`claude-statusbar detail` prints the same thing anywhere:
 
 ```
 5h window     63%  resets Sep 18 13:42 (1h42)
 Weekly        21%  resets Sep 22 16:00 (4d)
-Context       18%  of 200k
-Opus · $2.41 · 45m
 as of 11:58
 ```
+
+Both figures are account-wide. Per-session numbers — model, cost, context — are recorded
+but deliberately kept out of the bar and the breakdown: with several Claude Code sessions
+open, they describe whichever one wrote last, which is not the one you are looking at.
+Reach them through `--format json` or a `--template` if you want them anyway.
 
 Works with **i3blocks**, **waybar**, **polybar**, or anything that can run a command
 (`--format json` / `--format plain`).
@@ -93,19 +98,49 @@ the per-bar docs.
 
 ### Appearance
 
+**The block takes no colour of its own.** It prints text and lets your bar draw it in
+whatever colour the rest of your status line uses. A tool that decides your bar is red
+today is a tool fighting your theme, so colour is something you ask for:
+
 ```sh
-claude-statusbar render --label CC --weekly-label S --warn 60 --crit 85 --urgent 95
 claude-statusbar render --color-warn '#E5C07B' --color-crit '#E06C75'
 ```
 
-Colours follow the worst live window. At `--urgent` the i3blocks format also exits 33,
-which marks the block urgent.
+Then the block turns yellow past `--warn` and red past `--crit`, following whichever live
+window is worst. The thresholds move independently of the colours:
+
+```sh
+claude-statusbar render --warn 60 --crit 85 --urgent 95
+```
+
+`--urgent` on its own only labels the level. Add `--urgent-exit` to make the i3blocks
+format exit 33 past that point, which is how i3bar is told to mark a block urgent — it
+recolours the block from your bar's `urgent_workspace` palette, so it is opt-in for the
+same reason the colours are.
+
+Under waybar nothing is opt-in: the module always reports `class` as `ok`, `warn`, `crit`
+or `urgent`, and your CSS decides whether that means anything.
 
 Or lay it out yourself:
 
 ```sh
 claude-statusbar render --template '{session_pct} ({session_reset}) · week {weekly_pct}'
 ```
+
+The default `--label` is `✳` (U+2733, no variation selector, so it renders from your
+monospace font rather than the colour emoji font and takes the block's colour). If your
+bar font lacks it, pass any prefix you like.
+
+At bar sizes that icon lands smaller than the digits next to it. Where the bar parses
+pango markup, `--markup pango` wraps just the icon in a size tag so it grows on its own:
+
+```sh
+claude-statusbar render --format i3blocks --markup pango --icon-size x-large
+```
+
+Your bar has to be told to parse it — under i3blocks that is `markup=pango` on the block,
+see [docs/i3blocks.md](docs/i3blocks.md). Without that the tag shows up literally.
+`--format plain`, `--format json` and `--format polybar` ignore the flag entirely.
 
 Placeholders: `{label}` `{weekly_label}` `{session_pct}` `{session_reset}` `{weekly_pct}`
 `{weekly_reset}` `{spend_pct}` `{spend_reset}` `{model}` `{cost}` `{context_pct}`.
@@ -121,8 +156,9 @@ These are design limits, not bugs:
 - **API key, Bedrock and Vertex logins get no `rate_limits`** from Claude Code, so the
   block stays empty. `doctor` will tell you that is what happened.
 - **`statusLine` is a single slot** in `settings.json`. Use `--passthrough` to keep yours.
-- **i3bar has no hover events**, so under i3blocks the breakdown is on left-click. Waybar
-  gets a real tooltip.
+- **i3bar has no hover events.** Waybar gets a real tooltip and polybar a click action;
+  under i3blocks the block is all you get, which is why it carries both windows itself.
+  `claude-statusbar detail` is always there when you want the absolute reset times.
 
 ## State file
 

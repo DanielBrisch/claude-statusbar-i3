@@ -18,8 +18,8 @@ func at(d time.Duration) time.Time { return now.Add(d) }
 func opts() Options {
 	return Options{
 		Now:         now,
-		Label:       "CC",
-		WeeklyLabel: "S",
+		Label:       DefaultLabel,
+		WeeklyLabel: DefaultWeeklyLabel,
 		Thresholds:  usage.DefaultThresholds(),
 		Colors:      DefaultColors(),
 	}
@@ -39,7 +39,7 @@ func live() usage.Snapshot {
 
 func TestCompactShowsBothWindows(t *testing.T) {
 	got := Compact(live(), opts()).FullText
-	want := "CC 63% 1h42 │ S 21% 4d"
+	want := "✳ 63% 1h42 │ week 21% 4d"
 	if got != want {
 		t.Errorf("Compact() = %q, want %q", got, want)
 	}
@@ -50,7 +50,7 @@ func TestCompactPlaceholdersTheSessionButKeepsTheWeekly(t *testing.T) {
 	s.FiveHour = &usage.Limit{UsedPercentage: 99, ResetsAt: at(-time.Minute)}
 
 	got := Compact(s, opts()).FullText
-	want := "CC — │ S 21% 4d"
+	want := "✳ — │ week 21% 4d"
 	if got != want {
 		t.Errorf("Compact() = %q, want %q", got, want)
 	}
@@ -72,7 +72,17 @@ func TestCompactWithoutAnyRateLimitsIsEmpty(t *testing.T) {
 	}
 }
 
-func TestCompactColorFollowsTheWorstWindow(t *testing.T) {
+func TestCompactStaysUncolouredByDefault(t *testing.T) {
+	for _, pct := range []float64{10, 70, 90, 97, 140} {
+		s := live()
+		s.FiveHour.UsedPercentage = pct
+		if got := Compact(s, opts()).Color; got != "" {
+			t.Errorf("at %v%% Color = %q, want empty — the bar's own statusline colour is the default", pct, got)
+		}
+	}
+}
+
+func TestCompactColorFollowsTheWorstWindowWhenColoursAreConfigured(t *testing.T) {
 	cases := []struct {
 		name      string
 		fiveHour  float64
@@ -80,15 +90,17 @@ func TestCompactColorFollowsTheWorstWindow(t *testing.T) {
 		wantLevel usage.Level
 	}{
 		{"calm", 10, "", usage.LevelOK},
-		{"warn", 70, DefaultColors().Warn, usage.LevelWarn},
-		{"crit", 90, DefaultColors().Crit, usage.LevelCrit},
-		{"urgent", 97, DefaultColors().Crit, usage.LevelUrgent},
+		{"warn", 70, "#E5C07B", usage.LevelWarn},
+		{"crit", 90, "#E06C75", usage.LevelCrit},
+		{"urgent", 97, "#E06C75", usage.LevelUrgent},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			s := live()
 			s.FiveHour.UsedPercentage = tc.fiveHour
-			r := Compact(s, opts())
+			o := opts()
+			o.Colors = Colors{Warn: "#E5C07B", Crit: "#E06C75"}
+			r := Compact(s, o)
 			if r.Color != tc.wantColor {
 				t.Errorf("Color = %q, want %q", r.Color, tc.wantColor)
 			}
@@ -102,25 +114,27 @@ func TestCompactColorFollowsTheWorstWindow(t *testing.T) {
 func TestI3blocksEmitsFullShortAndColour(t *testing.T) {
 	s := live()
 	s.FiveHour.UsedPercentage = 90
+	o := opts()
+	o.Colors = Colors{Warn: "#E5C07B", Crit: "#E06C75"}
 
-	lines := strings.Split(strings.TrimRight(I3blocks(s, opts()), "\n"), "\n")
+	lines := strings.Split(strings.TrimRight(I3blocks(s, o), "\n"), "\n")
 	if len(lines) != 3 {
 		t.Fatalf("I3blocks emitted %d lines, want 3: %q", len(lines), lines)
 	}
-	if lines[0] != "CC 90% 1h42 │ S 21% 4d" {
+	if lines[0] != "✳ 90% 1h42 │ week 21% 4d" {
 		t.Errorf("full_text = %q", lines[0])
 	}
 	if lines[1] != "90%│21%" {
 		t.Errorf("short_text = %q", lines[1])
 	}
-	if lines[2] != DefaultColors().Crit {
-		t.Errorf("color = %q, want %q", lines[2], DefaultColors().Crit)
+	if lines[2] != "#E06C75" {
+		t.Errorf("color = %q, want %q", lines[2], "#E06C75")
 	}
 }
 
 func TestI3blocksOmitsTheColourLineWhenThereIsNoColour(t *testing.T) {
 	calm := live()
-	calm.FiveHour.UsedPercentage = 12
+	calm.FiveHour.UsedPercentage = 97
 
 	lines := strings.Split(strings.TrimRight(I3blocks(calm, opts()), "\n"), "\n")
 	if len(lines) != 2 {
@@ -144,11 +158,11 @@ func TestWaybarCarriesTheDetailInTheTooltip(t *testing.T) {
 	if err := json.Unmarshal([]byte(Waybar(live(), opts())), &out); err != nil {
 		t.Fatalf("Waybar output is not valid JSON: %v", err)
 	}
-	if out.Text != "CC 63% 1h42 │ S 21% 4d" {
+	if out.Text != "✳ 63% 1h42 │ week 21% 4d" {
 		t.Errorf("text = %q", out.Text)
 	}
-	if !strings.Contains(out.Tooltip, "Opus") {
-		t.Errorf("tooltip = %q, want it to mention the model", out.Tooltip)
+	if !strings.Contains(out.Tooltip, "Weekly") {
+		t.Errorf("tooltip = %q, want the breakdown", out.Tooltip)
 	}
 	if out.Class != "warn" {
 		t.Errorf("class = %q, want %q", out.Class, "warn")
@@ -161,9 +175,11 @@ func TestWaybarCarriesTheDetailInTheTooltip(t *testing.T) {
 func TestPolybarWrapsColourAndClickAction(t *testing.T) {
 	s := live()
 	s.FiveHour.UsedPercentage = 90
+	o := opts()
+	o.Colors = Colors{Warn: "#E5C07B", Crit: "#E06C75"}
 
-	got := Polybar(s, opts())
-	if !strings.Contains(got, "%{F"+DefaultColors().Crit+"}") {
+	got := Polybar(s, o)
+	if !strings.Contains(got, "%{F#E06C75}") {
 		t.Errorf("Polybar() = %q, want a colour tag", got)
 	}
 	if !strings.Contains(got, "%{A1:"+DetailCommand+":}") || !strings.HasSuffix(got, "%{A}") {
@@ -234,5 +250,119 @@ func TestDetailLinePadsByRuneNotByte(t *testing.T) {
 	if col(ascii) != col(multibyte) {
 		t.Errorf("percentage column differs: ascii=%d multibyte=%d — padding must count runes, not bytes\n%s%s",
 			col(ascii), col(multibyte), ascii, multibyte)
+	}
+}
+
+func TestDetailCarriesOnlyAccountWideFacts(t *testing.T) {
+	s := live()
+
+	got := Detail(s, opts())
+	for _, leaked := range []string{"Opus", "2.41", "Context", "45m"} {
+		if strings.Contains(got, leaked) {
+			t.Errorf("Detail() leaked %q — per-session figures belong to whichever session wrote last, which is arbitrary with several open:\n%s", leaked, got)
+		}
+	}
+	for _, want := range []string{"5h window", "Weekly", "as of"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("Detail() is missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestJSONStillExposesTheSessionForCustomFormats(t *testing.T) {
+	var out struct {
+		Session *struct {
+			Model   string  `json:"model"`
+			CostUSD float64 `json:"cost_usd"`
+		} `json:"session"`
+	}
+	if err := json.Unmarshal([]byte(JSON(live(), opts())), &out); err != nil {
+		t.Fatalf("JSON output is not valid: %v", err)
+	}
+	if out.Session == nil || out.Session.Model != "Opus" {
+		t.Errorf("session = %+v, want it still available to --format json and --template", out.Session)
+	}
+}
+
+func TestDefaultLabelCarriesNoEmojiVariationSelector(t *testing.T) {
+	for _, r := range DefaultLabel {
+		if r == '\ufe0f' {
+			t.Fatalf("DefaultLabel %q carries U+FE0F, which forces emoji presentation: the glyph would come from the colour emoji font, ignore the block colour and break the monospace width", DefaultLabel)
+		}
+	}
+}
+
+func TestPangoMarkupEnlargesOnlyTheIcon(t *testing.T) {
+	o := opts()
+	o.Markup = MarkupPango
+	o.IconSize = "x-large"
+
+	got := Compact(live(), o).FullText
+	want := `<span size="x-large">✳</span> 63% 1h42 │ week 21% 4d`
+	if got != want {
+		t.Errorf("Compact() = %q\nwant %q", got, want)
+	}
+}
+
+func TestPangoMarkupEscapesEverythingElse(t *testing.T) {
+	o := opts()
+	o.Markup = MarkupPango
+	o.Label = "a&b"
+	o.WeeklyLabel = "<w>"
+
+	got := Compact(live(), o).FullText
+	if strings.Contains(got, "a&b") || strings.Contains(got, "<w>") {
+		t.Errorf("Compact() = %q — pango markup must escape the text, or a stray & breaks i3bar's parser", got)
+	}
+	if !strings.Contains(got, "a&amp;b") || !strings.Contains(got, "&lt;w&gt;") {
+		t.Errorf("Compact() = %q, want escaped label and weekly label", got)
+	}
+}
+
+func TestWithoutPangoTheTextStaysLiteral(t *testing.T) {
+	o := opts()
+	o.IconSize = "x-large"
+
+	got := Compact(live(), o).FullText
+	if strings.Contains(got, "<span") {
+		t.Errorf("Compact() = %q — without markup=pango a span tag would show up literally on the bar", got)
+	}
+	if got != "✳ 63% 1h42 │ week 21% 4d" {
+		t.Errorf("Compact() = %q", got)
+	}
+}
+
+func TestPangoIsOnlyForBarsThatParseIt(t *testing.T) {
+	o := opts()
+	o.Markup = MarkupPango
+
+	for name, out := range map[string]string{"plain": Plain(live(), o), "json": JSON(live(), o)} {
+		if strings.Contains(out, "<span") {
+			t.Errorf("%s output carries pango markup:\n%s", name, out)
+		}
+	}
+}
+
+func TestPolybarLeavesTheColourAloneByDefault(t *testing.T) {
+	s := live()
+	s.FiveHour.UsedPercentage = 97
+
+	if got := Polybar(s, opts()); strings.Contains(got, "%{F") {
+		t.Errorf("Polybar() = %q, want no colour tag by default", got)
+	}
+}
+
+func TestWaybarStillReportsTheLevelSoCSSCanStyleIt(t *testing.T) {
+	s := live()
+	s.FiveHour.UsedPercentage = 97
+
+	var out struct {
+		Class string `json:"class"`
+	}
+	if err := json.Unmarshal([]byte(Waybar(s, opts())), &out); err != nil {
+		t.Fatalf("Waybar output is not JSON: %v", err)
+	}
+	if out.Class != "urgent" {
+		t.Errorf("class = %q, want %q — no colour is forced, but the level must stay available to CSS", out.Class, "urgent")
 	}
 }
