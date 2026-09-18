@@ -66,8 +66,28 @@ func (s *Store) read() (snapshotFile, error) {
 	if err := json.Unmarshal(b, &f); err != nil {
 		return snapshotFile{}, fmt.Errorf("parse state file %s: %w", s.path, err)
 	}
+	if !f.readable() {
+		return newSnapshotFile(), nil
+	}
 	if f.Sessions == nil {
 		f.Sessions = newSessions()
 	}
 	return f, nil
+}
+
+func (s *Store) StoredVersion() (int, error) {
+	b, err := os.ReadFile(s.path)
+	if errors.Is(err, os.ErrNotExist) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("read state file %s: %w", s.path, err)
+	}
+	var probe struct {
+		Version int `json:"version"`
+	}
+	if err := json.Unmarshal(b, &probe); err != nil {
+		return 0, fmt.Errorf("parse state file %s: %w", s.path, err)
+	}
+	return probe.Version, nil
 }
