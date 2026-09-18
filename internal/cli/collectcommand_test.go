@@ -15,14 +15,14 @@ func TestCollectStoresStateAndEchoesTheCompactLine(t *testing.T) {
 	if code := h.run(payloadJSON(63), "collect"); code != 0 {
 		t.Fatalf("collect exit = %d, stderr = %s", code, h.stderr)
 	}
-	if got, want := strings.TrimSpace(h.stdout.String()), "✳ 63% 1h42 │ week 21% 4d"; got != want {
+	if got, want := strings.TrimSpace(h.stdout.String()), "✳ session 63% 1h42 │ week 21% 4d"; got != want {
 		t.Errorf("collect stdout = %q, want %q", got, want)
 	}
 
 	if code := h.run("", "render", "--format", "plain"); code != 0 {
 		t.Fatalf("render exit = %d, stderr = %s", code, h.stderr)
 	}
-	if got, want := strings.TrimSpace(h.stdout.String()), "✳ 63% 1h42 │ week 21% 4d"; got != want {
+	if got, want := strings.TrimSpace(h.stdout.String()), "✳ session 63% 1h42 │ week 21% 4d"; got != want {
 		t.Errorf("render stdout = %q, want %q", got, want)
 	}
 }

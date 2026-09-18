@@ -44,9 +44,23 @@ Or lay it out yourself:
 claude-statusbar render --template '{session_pct} ({session_reset}) · week {weekly_pct}'
 ```
 
-The default `--label` is `✳` (U+2733, no variation selector, so it renders from your
-monospace font rather than the colour emoji font and takes the block's colour). If your
-bar font lacks it, pass any prefix you like.
+The block opens with two separate things, and each has its own flag:
+
+```sh
+claude-statusbar render --icon '✳' --label session --weekly-label week
+```
+
+`--icon` is the glyph that says which tool the block is about; `--label` is the word that
+says which window the first pair of figures belongs to, the same job `--weekly-label` does
+for the second. Either can be emptied: `--icon ''` drops the glyph, `--label ''` leaves the
+icon alone in front of the figures.
+
+They are separate because only the icon is ever resized. Enlarging `✳ session` as one
+string would blow up the word too.
+
+The default icon is U+2733, written without a variation selector so it renders from your
+monospace font rather than the colour emoji font and takes the block's colour. If your bar
+font lacks it, pass any glyph you like.
 
 At bar sizes that icon lands smaller than the digits next to it. Where the bar parses
 pango markup, `--markup pango` wraps just the icon in a size tag so it grows on its own:
@@ -57,9 +71,12 @@ claude-statusbar render --format i3blocks --markup pango --icon-size x-large
 
 Your bar has to be told to parse it — under i3blocks that is `markup=pango` on the block,
 see [docs/i3blocks.md](docs/i3blocks.md). Without that the tag shows up literally.
-`--format plain`, `--format json` and `--format polybar` ignore the flag entirely.
+`--format plain` and `--format json` ignore the flag entirely.
 
-Placeholders: `{label}` `{weekly_label}` `{session_pct}` `{session_reset}` `{weekly_pct}`
+Polybar parses no pango, so it has its own knob: `--icon-font N` draws the icon with the
+bar's Nth font. See [polybar.md](polybar.md).
+
+Placeholders: `{icon}` `{label}` `{weekly_label}` `{session_pct}` `{session_reset}` `{weekly_pct}`
 `{weekly_reset}` `{spend_pct}` `{spend_reset}` `{model}` `{cost}` `{context_pct}`.
 Expired or missing windows render as `—`.
 

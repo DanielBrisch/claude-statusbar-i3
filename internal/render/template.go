@@ -30,7 +30,8 @@ func (t Template) Expand(s usage.Snapshot) string {
 	spend := newSegment("", s.SpendLimit, t.opts)
 
 	return strings.NewReplacer(
-		"{label}", t.opts.Icon(),
+		"{icon}", t.opts.RenderedIcon(),
+		"{label}", t.opts.Escape(t.opts.Label),
 		"{weekly_label}", t.opts.Escape(t.opts.WeeklyLabel),
 		"{session_pct}", t.opts.Escape(five.percent()),
 		"{session_reset}", t.opts.Escape(five.reset()),

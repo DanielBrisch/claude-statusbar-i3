@@ -66,7 +66,7 @@ func TestRenderWaybarIsValidJSON(t *testing.T) {
 	if err := json.Unmarshal(h.stdout.Bytes(), &out); err != nil {
 		t.Fatalf("waybar output is not JSON: %v\n%s", err, h.stdout)
 	}
-	if out["text"] != "✳ 63% 1h42 │ week 21% 4d" {
+	if out["text"] != "✳ session 63% 1h42 │ week 21% 4d" {
 		t.Errorf("text = %v", out["text"])
 	}
 }
@@ -84,7 +84,7 @@ func TestClickingTheI3blocksBlockDoesNothing(t *testing.T) {
 	if h.notifier.sent != 0 {
 		t.Errorf("notifier called %d times, want 0 — the icon makes the block self-explanatory, so the click no longer pops anything", h.notifier.sent)
 	}
-	if !strings.HasPrefix(h.stdout.String(), "\u2733 63%") {
+	if !strings.HasPrefix(h.stdout.String(), "\u2733 session 63%") {
 		t.Errorf("the block must still render normally, got %q", h.stdout)
 	}
 }
