@@ -1,3 +1,3 @@
-module github.com/DanielBrisch/claude-usage-status-i3
+module github.com/DanielBrisch/claude-statusbar-i3
 
 go 1.24.4

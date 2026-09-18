@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-REPO="${REPO:-DanielBrisch/claude-usage-status-i3}"
+REPO="${REPO:-DanielBrisch/claude-statusbar-i3}"
 BIN="claude-statusbar"
 BINDIR="${BINDIR:-$HOME/.local/bin}"
 VERSION="${VERSION:-latest}"
