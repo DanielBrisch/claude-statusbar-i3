@@ -14,23 +14,23 @@ func TestBlockShowsBothWindows(t *testing.T) {
 	}
 }
 
-func TestBlockPlaceholdersTheSessionButKeepsTheWeekly(t *testing.T) {
+func TestBlockZeroesTheSessionOnceItsWindowRolls(t *testing.T) {
 	s := live()
 	s.FiveHour = usage.NewLimit(99, at(-time.Minute), now)
 
-	if got, want := block(s, opts()).FullText, "✳ session — │ week 21% 4d"; got != want {
+	if got, want := block(s, opts()).FullText, "✳ session 0% │ week 21% 4d"; got != want {
 		t.Errorf("FullText = %q, want %q", got, want)
 	}
 }
 
-func TestBlockIsEmptyWhenNothingIsLive(t *testing.T) {
+func TestBlockKeepsReportingOnceEveryWindowHasRolled(t *testing.T) {
 	s := usage.NewSnapshot(
-		usage.NewLimit(0, at(-time.Hour), now),
-		usage.NewLimit(0, at(-time.Hour), now),
-		nil, nil, now,
+		usage.NewLimit(90, at(-time.Hour), at(-2*time.Hour)),
+		usage.NewLimit(50, at(-time.Hour), at(-2*time.Hour)),
+		nil, nil, at(-2*time.Hour),
 	)
-	if got := block(s, opts()).FullText; got != "" {
-		t.Errorf("FullText = %q, want empty", got)
+	if got, want := block(s, opts()).FullText, "✳ session 0% │ week 0%"; got != want {
+		t.Errorf("FullText = %q, want %q — both windows rolled, and a rolled window is spent budget returned, not missing data", got, want)
 	}
 }
 
@@ -86,13 +86,13 @@ func TestTemplateReplacesEveryPlaceholder(t *testing.T) {
 	}
 }
 
-func TestTemplatePlaceholdersFallBackToTheDashWhenExpired(t *testing.T) {
+func TestTemplateKeepsThePercentageButNotTheCountdownOnARolledWindow(t *testing.T) {
 	s := live()
 	s.FiveHour = usage.NewLimit(99, at(-time.Minute), now)
 
 	o := opts()
 	o.Template = "{session_pct} {session_reset}"
-	if got, want := block(s, o).FullText, "— —"; got != want {
+	if got, want := block(s, o).FullText, "0% —"; got != want {
 		t.Errorf("FullText = %q, want %q", got, want)
 	}
 }
@@ -189,5 +189,44 @@ func TestTemplateSeparatesIconFromLabel(t *testing.T) {
 
 	if got, want := block(live(), o).FullText, "✳/session/week"; got != want {
 		t.Errorf("FullText = %q, want %q", got, want)
+	}
+}
+
+func TestAWindowThatRolledReadsZeroNotUnknown(t *testing.T) {
+	s := live()
+	s.FiveHour = usage.NewLimit(99, at(-time.Minute), at(-time.Hour))
+
+	got := block(s, opts()).FullText
+	if strings.Contains(got, Placeholder) {
+		t.Errorf("FullText = %q — a window past its reset has rolled over, and a rolled window is at zero, not unknown", got)
+	}
+	if !strings.Contains(got, "session 0%") {
+		t.Errorf("FullText = %q, want the session at 0%%", got)
+	}
+}
+
+func TestARolledWindowClaimsNoCountdownItCannotKnow(t *testing.T) {
+	s := live()
+	s.FiveHour = usage.NewLimit(99, at(-time.Minute), at(-time.Hour))
+
+	got := block(s, opts()).FullText
+	if got != "✳ session 0% │ week 21% 4d" {
+		t.Errorf("FullText = %q — the percentage is knowable, the next reset time is not until Claude Code says so", got)
+	}
+}
+
+func TestAWindowWeNeverHeardAboutStaysUnknown(t *testing.T) {
+	s := live()
+	s.FiveHour = nil
+
+	got := block(s, opts()).FullText
+	if !strings.Contains(got, "session "+Placeholder) {
+		t.Errorf("FullText = %q — no data is not the same as zero", got)
+	}
+}
+
+func TestTheBlockStillDisappearsWithNoDataAtAll(t *testing.T) {
+	if got := block(usage.Snapshot{}, opts()).FullText; got != "" {
+		t.Errorf("FullText = %q, want empty", got)
 	}
 }

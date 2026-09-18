@@ -35,7 +35,12 @@ func (s Snapshot) Live(now time.Time) []*Limit {
 }
 
 func (s Snapshot) HasVisibleWindow(now time.Time) bool {
-	return len(s.Live(now)) > 0
+	for _, l := range s.Windows() {
+		if l.Known() {
+			return true
+		}
+	}
+	return false
 }
 
 func (s Snapshot) Level(now time.Time, t Thresholds) Level {
@@ -50,8 +55,8 @@ func (s Snapshot) Level(now time.Time, t Thresholds) Level {
 
 func (s Snapshot) PrimaryPercentage(now time.Time) float64 {
 	for _, l := range []*Limit{s.FiveHour, s.SevenDay} {
-		if l.Live(now) {
-			return l.UsedPercentage
+		if l.Known() {
+			return l.PercentageAt(now)
 		}
 	}
 	return 0

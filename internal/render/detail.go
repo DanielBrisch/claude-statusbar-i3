@@ -28,11 +28,15 @@ func (d Detail) String() string {
 }
 
 func (d Detail) line(label string, l *usage.Limit) string {
-	if l.Expired(d.opts.Now) {
+	switch {
+	case !l.Known():
 		return fmt.Sprintf("%-11s %5s\n", label, Placeholder)
+	case l.Rolled(d.opts.Now):
+		return fmt.Sprintf("%-11s %5s  window rolled over, waiting on Claude Code\n", label, l.PercentAt(d.opts.Now))
+	default:
+		return fmt.Sprintf("%-11s %5s  resets %s (%s)\n", label, l.PercentAt(d.opts.Now),
+			l.ResetsAt.Format("Jan 02 15:04"), l.TimeLeft(d.opts.Now))
 	}
-	return fmt.Sprintf("%-11s %5s  resets %s (%s)\n", label, l.Percent(),
-		l.ResetsAt.Format("Jan 02 15:04"), l.TimeLeft(d.opts.Now))
 }
 
 func (d Detail) observedAt() string {

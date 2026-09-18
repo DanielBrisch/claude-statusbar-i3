@@ -15,14 +15,14 @@ func newSegment(label string, l *usage.Limit, o Options) segment {
 }
 
 func (s segment) percent() string {
-	if s.limit.Expired(s.opts.Now) {
+	if !s.limit.Known() {
 		return Placeholder
 	}
-	return s.limit.Percent()
+	return s.limit.PercentAt(s.opts.Now)
 }
 
 func (s segment) reset() string {
-	if s.limit.Expired(s.opts.Now) {
+	if !s.limit.Live(s.opts.Now) {
 		return Placeholder
 	}
 	return s.limit.TimeLeft(s.opts.Now).String()
@@ -30,8 +30,11 @@ func (s segment) reset() string {
 
 func (s segment) String() string {
 	body := Placeholder
-	if s.limit.Live(s.opts.Now) {
+	switch {
+	case s.limit.Live(s.opts.Now):
 		body = s.percent() + " " + s.reset()
+	case s.limit.Known():
+		body = s.percent()
 	}
 	body = s.opts.Escape(body)
 	if s.label == "" {

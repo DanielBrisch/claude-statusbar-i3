@@ -101,18 +101,18 @@ func TestSnapshotLevelIgnoresExpiredWindows(t *testing.T) {
 	}
 }
 
-func TestSnapshotHasNothingToShowWhenEveryWindowIsAbsentOrExpired(t *testing.T) {
+func TestSnapshotHasNothingToShowOnlyWhenItHasNoData(t *testing.T) {
 	empty := Snapshot{}
 	if empty.HasVisibleWindow(now) {
 		t.Error("HasVisibleWindow() = true for an empty snapshot, want false")
 	}
 
-	expired := Snapshot{
+	rolled := Snapshot{
 		FiveHour: &Limit{ResetsAt: at(-time.Hour)},
 		SevenDay: &Limit{ResetsAt: at(-time.Hour)},
 	}
-	if expired.HasVisibleWindow(now) {
-		t.Error("HasVisibleWindow() = true when every window expired, want false")
+	if !rolled.HasVisibleWindow(now) {
+		t.Error("HasVisibleWindow() = false when every window rolled — rolled is a reading of zero, not an absence of one")
 	}
 
 	weeklyOnly := Snapshot{
@@ -121,5 +121,23 @@ func TestSnapshotHasNothingToShowWhenEveryWindowIsAbsentOrExpired(t *testing.T) 
 	}
 	if !weeklyOnly.HasVisibleWindow(now) {
 		t.Error("HasVisibleWindow() = false while the weekly window is still live, want true")
+	}
+}
+
+func TestRolledWindowsReadZero(t *testing.T) {
+	rolled := NewLimit(99, at(-time.Minute), at(-time.Hour))
+	if !rolled.Rolled(now) {
+		t.Error("Rolled() = false for a window past its reset")
+	}
+	if got := rolled.PercentAt(now); got != "0%" {
+		t.Errorf("Percent() = %q, want %q — the window reset, so its consumption did too", got, "0%")
+	}
+
+	live := NewLimit(63, at(time.Hour), now)
+	if live.Rolled(now) {
+		t.Error("Rolled() = true for a live window")
+	}
+	if got := live.PercentAt(now); got != "63%" {
+		t.Errorf("Percent() = %q, want %q", got, "63%")
 	}
 }
