@@ -14,6 +14,7 @@ type renderFlags struct {
 	template    string
 	markup      string
 	iconSize    string
+	iconFont    int
 	warn        float64
 	crit        float64
 	urgent      float64
@@ -44,6 +45,7 @@ func (f *renderFlags) bind(fs *flag.FlagSet) {
 	fs.StringVar(&f.template, "template", f.template, "custom layout, e.g. '{label} {session_pct} {session_reset}'")
 	fs.StringVar(&f.markup, "markup", f.markup, "none|pango; pango lets the icon be enlarged, and your bar must be told to parse it")
 	fs.StringVar(&f.iconSize, "icon-size", f.iconSize, "pango size for the icon when --markup pango: small, medium, large, x-large, xx-large")
+	fs.IntVar(&f.iconFont, "icon-font", f.iconFont, "polybar only: draw the icon with this font index, so %{T2} means the bar's font-1")
 	fs.Float64Var(&f.warn, "warn", f.warn, "percentage that reaches the warn level")
 	fs.Float64Var(&f.crit, "crit", f.crit, "percentage that reaches the crit level")
 	fs.Float64Var(&f.urgent, "urgent", f.urgent, "percentage that reaches the urgent level")
@@ -59,6 +61,7 @@ func (f *renderFlags) options(now time.Time) render.Options {
 	o.Template = f.template
 	o.Markup = render.Markup(f.markup)
 	o.IconSize = f.iconSize
+	o.IconFont = f.iconFont
 	o.UrgentExit = f.urgentExit
 	o.Thresholds = usage.NewThresholds(f.warn, f.crit, f.urgent)
 	o.Colors = render.NewColors(f.colorWarn, f.colorCrit)
