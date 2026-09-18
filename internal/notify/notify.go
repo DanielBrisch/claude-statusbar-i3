@@ -15,13 +15,13 @@ type Notifier struct {
 	Out    io.Writer
 }
 
-func New() *Notifier {
+func New(out io.Writer) *Notifier {
 	return &Notifier{
 		Lookup: exec.LookPath,
 		Run: func(name string, args ...string) error {
 			return exec.Command(name, args...).Run()
 		},
-		Out: os.Stdout,
+		Out: out,
 	}
 }
 

@@ -37,7 +37,7 @@ type App struct {
 	Now          func() time.Time
 	StatePath    string
 	SettingsPath string
-	Notifier     Notifier
+	NewNotifier  func(out io.Writer) Notifier
 	Shell        func(cmd string, stdin io.Reader, stdout, stderr io.Writer) error
 }
 
@@ -140,7 +140,7 @@ func (a *App) render(args []string) (int, error) {
 	opts := a.options(o)
 
 	if *format == "i3blocks" && a.env("BLOCK_BUTTON") == "1" {
-		if err := a.notifier().Send(notificationTitle, render.Detail(snap, opts)); err != nil {
+		if err := a.notifier(a.Stderr).Send(notificationTitle, render.Detail(snap, opts)); err != nil {
 			fmt.Fprintln(a.Stderr, err)
 		}
 	}
@@ -187,7 +187,7 @@ func (a *App) detail(args []string) error {
 	}
 	body := render.Detail(snap, a.options(o))
 	if *send {
-		return a.notifier().Send(notificationTitle, body)
+		return a.notifier(a.Stdout).Send(notificationTitle, body)
 	}
 	fmt.Fprint(a.Stdout, body)
 	return nil
@@ -344,11 +344,11 @@ func (a *App) env(k string) string {
 	return os.Getenv(k)
 }
 
-func (a *App) notifier() Notifier {
-	if a.Notifier != nil {
-		return a.Notifier
+func (a *App) notifier(out io.Writer) Notifier {
+	if a.NewNotifier != nil {
+		return a.NewNotifier(out)
 	}
-	return notify.New()
+	return notify.New(out)
 }
 
 func (a *App) statePath() string {

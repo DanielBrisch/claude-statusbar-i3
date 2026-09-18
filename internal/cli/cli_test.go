@@ -16,14 +16,19 @@ import (
 var now = time.Date(2026, 9, 18, 12, 0, 0, 0, time.UTC)
 
 type fakeNotifier struct {
-	title string
-	body  string
-	sent  int
+	title    string
+	body     string
+	sent     int
+	out      io.Writer
+	fallback bool
 }
 
 func (f *fakeNotifier) Send(title, body string) error {
 	f.title, f.body = title, body
 	f.sent++
+	if f.fallback {
+		fmt.Fprintf(f.out, "%s\n%s", title, body)
+	}
 	return nil
 }
 
@@ -60,7 +65,10 @@ func (h *harness) run(stdin string, args ...string) int {
 		Now:          func() time.Time { return now },
 		StatePath:    filepath.Join(h.dir, "state.json"),
 		SettingsPath: filepath.Join(h.dir, "settings.json"),
-		Notifier:     h.notifier,
+		NewNotifier: func(out io.Writer) Notifier {
+			h.notifier.out = out
+			return h.notifier
+		},
 		Shell: func(cmd string, stdin io.Reader, stdout, stderr io.Writer) error {
 			h.shell = append(h.shell, cmd)
 			if stdin != nil && stdout != nil {
@@ -347,5 +355,39 @@ func TestCollectPassthroughFeedsTheOriginalPayloadOnward(t *testing.T) {
 	}
 	if !strings.Contains(h.stdout.String(), fmt.Sprintf("passthrough saw %d bytes", len(in))) {
 		t.Errorf("stdout = %q, want the passthrough output built from the full payload", h.stdout)
+	}
+}
+
+func TestAFailingNotificationNeverContaminatesTheBlock(t *testing.T) {
+	h := newHarness(t)
+	h.notifier.fallback = true
+	h.run(payloadJSON(63), "collect", "--print", "none")
+
+	h.env["BLOCK_BUTTON"] = "1"
+	h.run("", "render", "--format", "i3blocks")
+
+	lines := strings.Split(strings.TrimRight(h.stdout.String(), "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("stdout has %d lines, want exactly the 3 block lines (full, short, colour) — a notifier that falls back to text must not write to the block:\n%s", len(lines), h.stdout)
+	}
+	if strings.Contains(h.stdout.String(), "Weekly") || strings.Contains(h.stdout.String(), notificationTitle) {
+		t.Errorf("the notification leaked into the block:\n%s", h.stdout)
+	}
+	if lines[0] != "CC 63% 1h42 │ S 21% 4d" {
+		t.Errorf("full_text = %q", lines[0])
+	}
+	if !strings.Contains(h.stderr.String(), "Weekly") {
+		t.Errorf("the fallback text should land on stderr, got stderr = %q", h.stderr)
+	}
+}
+
+func TestDetailNotifyFallbackStillReachesStdout(t *testing.T) {
+	h := newHarness(t)
+	h.notifier.fallback = true
+	h.run(payloadJSON(63), "collect", "--print", "none")
+
+	h.run("", "detail", "--notify")
+	if !strings.Contains(h.stdout.String(), "Weekly") {
+		t.Errorf("stdout = %q, want the breakdown — on a headless box the fallback is the whole point", h.stdout)
 	}
 }
