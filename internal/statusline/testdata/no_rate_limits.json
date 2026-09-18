@@ -1,5 +1,5 @@
 {
-  "cwd": "/home/daniel/proj",
+  "cwd": "/home/user/project",
   "session_id": "def456",
   "model": { "id": "claude-opus-5", "display_name": "Opus" },
   "version": "2.1.276",

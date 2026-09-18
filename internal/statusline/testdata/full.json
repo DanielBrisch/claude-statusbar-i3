@@ -1,9 +1,9 @@
 {
-  "cwd": "/home/daniel/proj",
+  "cwd": "/home/user/project",
   "session_id": "abc123",
-  "transcript_path": "/home/daniel/.claude/projects/-home-daniel/abc123.jsonl",
+  "transcript_path": "/home/user/.claude/projects/-home-user/abc123.jsonl",
   "model": { "id": "claude-opus-5", "display_name": "Opus" },
-  "workspace": { "current_dir": "/home/daniel/proj", "project_dir": "/home/daniel/proj" },
+  "workspace": { "current_dir": "/home/user/project", "project_dir": "/home/user/project" },
   "version": "2.1.276",
   "output_style": { "name": "default" },
   "cost": {

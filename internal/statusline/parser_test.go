@@ -64,7 +64,7 @@ func TestParseReadsSessionFields(t *testing.T) {
 	if got, want := p.ContextWindowSize, int64(200000); got != want {
 		t.Errorf("ContextWindowSize = %v, want %v", got, want)
 	}
-	if got, want := p.CWD, "/home/daniel/proj"; got != want {
+	if got, want := p.CWD, "/home/user/project"; got != want {
 		t.Errorf("CWD = %q, want %q", got, want)
 	}
 }
