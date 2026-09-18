@@ -160,12 +160,34 @@ func TestRenderOnAnEmptyStateIsSilentAndSuccessful(t *testing.T) {
 	}
 }
 
-func TestRenderExitsThirtyThreeWhenUrgent(t *testing.T) {
+func TestRenderStaysQuietAtUrgentByDefault(t *testing.T) {
 	h := newHarness(t)
 	h.run(payloadJSON(97), "collect", "--print", "none")
 
-	if code := h.run("", "render", "--format", "i3blocks"); code != 33 {
+	if code := h.run("", "render", "--format", "i3blocks"); code != 0 {
+		t.Errorf("render exit = %d, want 0 — exit 33 recolours the block, so it is opt-in", code)
+	}
+	if strings.Contains(h.stdout.String(), "#") {
+		t.Errorf("stdout = %q, want no colour line by default", h.stdout)
+	}
+}
+
+func TestRenderExitsThirtyThreeWhenUrgentExitIsAskedFor(t *testing.T) {
+	h := newHarness(t)
+	h.run(payloadJSON(97), "collect", "--print", "none")
+
+	if code := h.run("", "render", "--format", "i3blocks", "--urgent-exit"); code != 33 {
 		t.Errorf("render exit = %d, want 33 (i3blocks urgent)", code)
+	}
+}
+
+func TestRenderEmitsTheColourLineOnlyWhenOneIsConfigured(t *testing.T) {
+	h := newHarness(t)
+	h.run(payloadJSON(97), "collect", "--print", "none")
+
+	h.run("", "render", "--format", "i3blocks", "--color-crit", "#E06C75")
+	if !strings.Contains(h.stdout.String(), "#E06C75") {
+		t.Errorf("stdout = %q, want the configured colour", h.stdout)
 	}
 }
 
@@ -173,7 +195,7 @@ func TestRenderDoesNotExitThirtyThreeForOtherFormats(t *testing.T) {
 	h := newHarness(t)
 	h.run(payloadJSON(97), "collect", "--print", "none")
 
-	if code := h.run("", "render", "--format", "waybar"); code != 0 {
+	if code := h.run("", "render", "--format", "waybar", "--urgent-exit"); code != 0 {
 		t.Errorf("render exit = %d, want 0 — exit 33 is an i3blocks convention", code)
 	}
 }

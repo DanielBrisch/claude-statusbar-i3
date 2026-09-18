@@ -98,13 +98,28 @@ the per-bar docs.
 
 ### Appearance
 
+**The block takes no colour of its own.** It prints text and lets your bar draw it in
+whatever colour the rest of your status line uses. A tool that decides your bar is red
+today is a tool fighting your theme, so colour is something you ask for:
+
 ```sh
-claude-statusbar render --label '✳' --weekly-label week --warn 60 --crit 85 --urgent 95
 claude-statusbar render --color-warn '#E5C07B' --color-crit '#E06C75'
 ```
 
-Colours follow the worst live window. At `--urgent` the i3blocks format also exits 33,
-which marks the block urgent.
+Then the block turns yellow past `--warn` and red past `--crit`, following whichever live
+window is worst. The thresholds move independently of the colours:
+
+```sh
+claude-statusbar render --warn 60 --crit 85 --urgent 95
+```
+
+`--urgent` on its own only labels the level. Add `--urgent-exit` to make the i3blocks
+format exit 33 past that point, which is how i3bar is told to mark a block urgent — it
+recolours the block from your bar's `urgent_workspace` palette, so it is opt-in for the
+same reason the colours are.
+
+Under waybar nothing is opt-in: the module always reports `class` as `ok`, `warn`, `crit`
+or `urgent`, and your CSS decides whether that means anything.
 
 Or lay it out yourself:
 

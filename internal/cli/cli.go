@@ -161,7 +161,7 @@ func (a *App) render(args []string) (int, error) {
 			fmt.Fprintln(a.Stdout)
 		}
 	}
-	if *format == "i3blocks" && render.Compact(snap, opts).Level == usage.LevelUrgent {
+	if *format == "i3blocks" && *o.urgentExit && render.Compact(snap, opts).Level == usage.LevelUrgent {
 		return i3blocksUrgent, nil
 	}
 	return 0, nil
@@ -251,6 +251,7 @@ type renderOptions struct {
 	urgent      *float64
 	colorWarn   *string
 	colorCrit   *string
+	urgentExit  *bool
 }
 
 func (a *App) renderFlags(fs *flag.FlagSet) *renderOptions {
@@ -265,8 +266,9 @@ func (a *App) renderFlags(fs *flag.FlagSet) *renderOptions {
 		warn:        fs.Float64("warn", d.Warn, "percentage that turns the block yellow"),
 		crit:        fs.Float64("crit", d.Crit, "percentage that turns the block red"),
 		urgent:      fs.Float64("urgent", d.Urgent, "percentage that marks the block urgent"),
-		colorWarn:   fs.String("color-warn", c.Warn, "hex colour for the warn level"),
-		colorCrit:   fs.String("color-crit", c.Crit, "hex colour for the crit level"),
+		colorWarn:   fs.String("color-warn", c.Warn, "hex colour once --warn is crossed; empty keeps your bar's own text colour"),
+		colorCrit:   fs.String("color-crit", c.Crit, "hex colour once --crit is crossed; empty keeps your bar's own text colour"),
+		urgentExit:  fs.Bool("urgent-exit", false, "exit 33 past --urgent so i3blocks marks the block urgent, which recolours it"),
 	}
 }
 
@@ -277,7 +279,7 @@ func defaultRenderOptions() *renderOptions {
 	markup, iconSize := string(render.MarkupNone), render.DefaultIconSize
 	return &renderOptions{
 		label: &label, weeklyLabel: &weekly, template: &empty,
-		markup: &markup, iconSize: &iconSize,
+		markup: &markup, iconSize: &iconSize, urgentExit: new(bool),
 		warn: &d.Warn, crit: &d.Crit, urgent: &d.Urgent,
 		colorWarn: &c.Warn, colorCrit: &c.Crit,
 	}

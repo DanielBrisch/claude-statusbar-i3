@@ -12,6 +12,16 @@ interval=10
 Block order in the file is left-to-right on the bar, so put it wherever you want it to
 appear. Reload with `i3-msg restart` — i3blocks only re-reads its config on start.
 
+## Colour
+
+The block inherits your bar's `statusline` colour and stays that way at every usage level.
+To have it change, pass the colours you want and, if you also want i3bar's urgent
+treatment, ask for the exit code that triggers it:
+
+```ini
+command=claude-statusbar render --format i3blocks --markup pango --icon-size x-large --color-warn '#E5C07B' --color-crit '#E06C75' --urgent-exit
+```
+
 ## Why markup=pango
 
 At a typical bar size the icon comes out smaller than the digits beside it. Pango markup

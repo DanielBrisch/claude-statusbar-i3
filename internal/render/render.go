@@ -33,7 +33,7 @@ type Colors struct {
 }
 
 func DefaultColors() Colors {
-	return Colors{OK: "", Warn: "#E5C07B", Crit: "#E06C75"}
+	return Colors{}
 }
 
 func (c Colors) For(l usage.Level) string {
