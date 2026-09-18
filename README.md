@@ -4,10 +4,10 @@ Claude Code's `/usage` numbers on your status bar, so you know whether you can k
 without opening Claude and asking.
 
 ```
-… TEMP 52°C │ ✳ 63% 1h42 │ week 21% 4d │ 🔊 40% …
-              └── 5-hour window   └── weekly window
-                  63% used,           21% used,
-                  resets in 1h42      resets in 4 days
+… TEMP 52°C │ ✳ session 63% 1h42 │ week 21% 4d │ 🔊 40% …
+                  └── 5-hour window   └── weekly window
+                      63% used,           21% used,
+                      resets in 1h42      resets in 4 days
 ```
 
 A single Go binary with no dependencies, for **i3blocks**, **waybar**, **polybar**, or
