@@ -27,6 +27,8 @@ jobs:
           fi
       - run: go vet ./...
       - run: go test -race ./...
+      - name: the command itself must build
+        run: go build -o /dev/null ./cmd/claude-statusbar
 
   shellcheck:
     runs-on: ubuntu-latest
