@@ -232,3 +232,48 @@ func TestSnapshotBreaksUpdatedAtTiesByWriteOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestSnapshotIgnoresAStateFileFromANewerVersion(t *testing.T) {
+	s := newStore(t)
+	if err := s.Merge(payload("a", 42), now); err != nil {
+		t.Fatalf("Merge: %v", err)
+	}
+
+	raw, err := os.ReadFile(s.Path())
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	bumped := strings.Replace(string(raw), `"version":1`, `"version":99`, 1)
+	if bumped == string(raw) {
+		t.Fatalf("could not bump the version in %s", raw)
+	}
+	if err := os.WriteFile(s.Path(), []byte(bumped), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	snap, err := s.Snapshot()
+	if err != nil {
+		t.Fatalf("Snapshot of a newer state file returned %v, want no error — the bar must not break", err)
+	}
+	if snap.FiveHour != nil {
+		t.Errorf("FiveHour = %+v, want nil — a layout this binary does not understand must not be read as if it did", snap.FiveHour)
+	}
+}
+
+func TestStoreReportsAnUnreadableVersion(t *testing.T) {
+	s := newStore(t)
+	if err := os.WriteFile(s.Path(), []byte(`{"version":99}`), 0o600); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	if _, err := s.Snapshot(); err != nil {
+		t.Fatalf("Snapshot: %v", err)
+	}
+	v, err := s.StoredVersion()
+	if err != nil {
+		t.Fatalf("StoredVersion: %v", err)
+	}
+	if v != 99 {
+		t.Errorf("StoredVersion() = %d, want 99 so doctor can say what it found", v)
+	}
+}

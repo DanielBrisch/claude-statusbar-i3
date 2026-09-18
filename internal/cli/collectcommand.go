@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/DanielBrisch/claude-statusbar-i3/internal/render"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/state"
 	"github.com/DanielBrisch/claude-statusbar-i3/internal/statusline"
 )
 
@@ -39,7 +41,10 @@ func (c *CollectCommand) Run(args []string) (int, error) {
 
 	store := c.app.store()
 	if err := store.Merge(payload, c.app.now()); err != nil {
-		return 0, err
+		if !errors.Is(err, state.ErrBusy) {
+			return 0, err
+		}
+		fmt.Fprintln(c.app.Stderr, "another collector held the state file; keeping the previous reading")
 	}
 
 	if *refresh != "" {

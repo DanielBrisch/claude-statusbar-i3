@@ -71,3 +71,23 @@ func (i *Installer) save(settings map[string]json.RawMessage) error {
 	}
 	return nil
 }
+
+func (i *Installer) Installed() (string, error) {
+	raw, err := os.ReadFile(i.path)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("read %s: %w", i.path, err)
+	}
+	var settings struct {
+		StatusLine *statusLine `json:"statusLine"`
+	}
+	if err := json.Unmarshal(raw, &settings); err != nil {
+		return "", fmt.Errorf("parse %s: %w", i.path, err)
+	}
+	if settings.StatusLine == nil {
+		return "", nil
+	}
+	return settings.StatusLine.Command, nil
+}

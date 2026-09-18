@@ -38,6 +38,10 @@ func (f *snapshotFile) absorb(p statusline.Payload, now time.Time) {
 	f.Sessions.prune(now)
 }
 
+func (f snapshotFile) readable() bool {
+	return f.Version <= Version
+}
+
 func (f snapshotFile) domain() usage.Snapshot {
 	return usage.NewSnapshot(
 		f.Account.FiveHour.domain(),
