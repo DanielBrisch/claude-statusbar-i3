@@ -8,7 +8,7 @@ type Polybar struct {
 
 func NewPolybar(r *Renderer) *Polybar {
 	o := r.Options().Plain()
-	o.Label = polybarFont(o.IconFont).wrap(o.Label)
+	o.Icon = polybarFont(o.IconFont).wrap(o.Icon)
 	return &Polybar{renderer: NewRenderer(o)}
 }
 
