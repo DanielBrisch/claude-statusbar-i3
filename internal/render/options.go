@@ -22,6 +22,7 @@ type Options struct {
 	Template    string
 	Markup      Markup
 	IconSize    string
+	IconFont    int
 	UrgentExit  bool
 	Thresholds  usage.Thresholds
 	Colors      Colors

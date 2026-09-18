@@ -160,3 +160,50 @@ func TestJSONStillExposesTheSessionForCustomFormats(t *testing.T) {
 	}
 	_ = time.Minute
 }
+
+func TestPolybarEnlargesTheIconWithAFontSwitch(t *testing.T) {
+	o := opts()
+	o.IconFont = 2
+
+	got := render("polybar", live(), o).Text
+	if !strings.Contains(got, "%{T2}✳%{T-}") {
+		t.Errorf("Polybar = %q, want the icon wrapped in a font switch", got)
+	}
+	if strings.Count(got, "%{T") != 2 {
+		t.Errorf("Polybar = %q, want the switch around the icon only", got)
+	}
+	if !strings.Contains(got, "63% 1h42") {
+		t.Errorf("Polybar = %q, want the figures untouched", got)
+	}
+}
+
+func TestPolybarLeavesTheIconAloneWithoutAFontIndex(t *testing.T) {
+	if got := render("polybar", live(), opts()).Text; strings.Contains(got, "%{T") {
+		t.Errorf("Polybar = %q, want no font switch by default — it needs a font-N the user may not have configured", got)
+	}
+}
+
+func TestOnlyPolybarUsesTheFontSwitch(t *testing.T) {
+	o := opts()
+	o.IconFont = 2
+
+	for _, name := range []string{"i3blocks", "waybar", "plain", "json"} {
+		if got := render(name, live(), o).Text; strings.Contains(got, "%{T") {
+			t.Errorf("%s output carries a polybar font switch: %q", name, got)
+		}
+	}
+}
+
+func TestPolybarFontSwitchSurvivesAlongsideColour(t *testing.T) {
+	s := live()
+	s.FiveHour.UsedPercentage = 90
+	o := coloured(opts())
+	o.IconFont = 2
+
+	got := render("polybar", s, o).Text
+	for _, want := range []string{"%{A1:", "%{F#E06C75}", "%{T2}✳%{T-}", "%{F-}", "%{A}"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("Polybar = %q, missing %q", got, want)
+		}
+	}
+}

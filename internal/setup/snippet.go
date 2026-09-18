@@ -28,9 +28,13 @@ func (s Snippet) String() string {
 
   [module/claude]
   type = custom/script
-  exec = %s render --format polybar
+  exec = %s render --format polybar --icon-font 2
   interval = 10
   format = <label>
+
+--icon-font 2 draws the icon with the bar's font-1, which is how polybar makes
+one glyph bigger than the text around it. Add a larger font as font-1 on your
+bar, or drop the flag to keep the icon at text size.
 `, s.binary)
 	default:
 		return fmt.Sprintf(`Add to ~/.config/i3blocks/config:
