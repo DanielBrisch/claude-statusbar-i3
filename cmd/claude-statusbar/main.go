@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/cli"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/cli"
 )
 
 func main() {

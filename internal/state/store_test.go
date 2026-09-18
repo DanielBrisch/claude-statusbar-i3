@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/statusline"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/statusline"
 )
 
 var now = time.Date(2026, 9, 18, 12, 0, 0, 0, time.UTC)

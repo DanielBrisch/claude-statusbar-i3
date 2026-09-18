@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/render"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/render"
 )
 
 const notificationTitle = "Claude usage"

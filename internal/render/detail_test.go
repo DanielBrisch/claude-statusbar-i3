@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/usage"
 )
 
 func detail(s usage.Snapshot, o Options) string {

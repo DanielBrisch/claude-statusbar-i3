@@ -3,8 +3,8 @@ package state
 import (
 	"time"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/statusline"
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/statusline"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/usage"
 )
 
 const Version = 1

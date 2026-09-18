@@ -3,7 +3,7 @@ package render
 import (
 	"time"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/usage"
 )
 
 type windowView struct {

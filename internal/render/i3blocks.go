@@ -1,6 +1,6 @@
 package render
 
-import "github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
+import "github.com/DanielBrisch/claude-statusbar-i3/internal/usage"
 
 const i3blocksUrgentExitCode = 33
 

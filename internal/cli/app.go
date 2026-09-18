@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/notify"
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/state"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/notify"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/state"
 )
 
 const BinaryName = "claude-statusbar"

@@ -3,7 +3,7 @@ package render
 import (
 	"strings"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/usage"
 )
 
 type Renderer struct {

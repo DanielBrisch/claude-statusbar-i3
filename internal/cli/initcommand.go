@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/setup"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/setup"
 )
 
 type InitCommand struct {

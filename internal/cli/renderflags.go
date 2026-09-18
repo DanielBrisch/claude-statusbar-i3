@@ -4,8 +4,8 @@ import (
 	"flag"
 	"time"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/render"
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/render"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/usage"
 )
 
 type renderFlags struct {

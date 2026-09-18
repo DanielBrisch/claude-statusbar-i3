@@ -1,7 +1,7 @@
 package render
 
 import (
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/usage"
 )
 
 type segment struct {

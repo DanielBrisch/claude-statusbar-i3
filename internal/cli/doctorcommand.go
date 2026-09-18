@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/DanielBrisch/claude-usage-status-i3/internal/render"
+	"github.com/DanielBrisch/claude-statusbar-i3/internal/render"
 )
 
 type DoctorCommand struct {
