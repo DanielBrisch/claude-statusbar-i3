@@ -275,3 +275,54 @@ func TestDefaultLabelCarriesNoEmojiVariationSelector(t *testing.T) {
 		}
 	}
 }
+
+func TestPangoMarkupEnlargesOnlyTheIcon(t *testing.T) {
+	o := opts()
+	o.Markup = MarkupPango
+	o.IconSize = "x-large"
+
+	got := Compact(live(), o).FullText
+	want := `<span size="x-large">✳</span> 63% 1h42 │ week 21% 4d`
+	if got != want {
+		t.Errorf("Compact() = %q\nwant %q", got, want)
+	}
+}
+
+func TestPangoMarkupEscapesEverythingElse(t *testing.T) {
+	o := opts()
+	o.Markup = MarkupPango
+	o.Label = "a&b"
+	o.WeeklyLabel = "<w>"
+
+	got := Compact(live(), o).FullText
+	if strings.Contains(got, "a&b") || strings.Contains(got, "<w>") {
+		t.Errorf("Compact() = %q — pango markup must escape the text, or a stray & breaks i3bar's parser", got)
+	}
+	if !strings.Contains(got, "a&amp;b") || !strings.Contains(got, "&lt;w&gt;") {
+		t.Errorf("Compact() = %q, want escaped label and weekly label", got)
+	}
+}
+
+func TestWithoutPangoTheTextStaysLiteral(t *testing.T) {
+	o := opts()
+	o.IconSize = "x-large"
+
+	got := Compact(live(), o).FullText
+	if strings.Contains(got, "<span") {
+		t.Errorf("Compact() = %q — without markup=pango a span tag would show up literally on the bar", got)
+	}
+	if got != "✳ 63% 1h42 │ week 21% 4d" {
+		t.Errorf("Compact() = %q", got)
+	}
+}
+
+func TestPangoIsOnlyForBarsThatParseIt(t *testing.T) {
+	o := opts()
+	o.Markup = MarkupPango
+
+	for name, out := range map[string]string{"plain": Plain(live(), o), "json": JSON(live(), o)} {
+		if strings.Contains(out, "<span") {
+			t.Errorf("%s output carries pango markup:\n%s", name, out)
+		}
+	}
+}

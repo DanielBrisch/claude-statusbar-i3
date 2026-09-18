@@ -33,10 +33,15 @@ func snippet(bar string) string {
 		return fmt.Sprintf(`Add to ~/.config/i3blocks/config:
 
   [claude]
-  command=%s render --format i3blocks
+  command=%s render --format i3blocks --markup pango
+  markup=pango
   interval=10
 
-Then reload i3blocks (restart i3, or re-read the config).
+Then restart i3 (i3-msg restart) so i3blocks re-reads its config.
+
+markup=pango is what lets the icon be drawn larger than the rest of the block.
+Drop both the property and the flag if you would rather keep it plain, and use
+--icon-size to change how much larger it gets.
 `, binaryName())
 	}
 }

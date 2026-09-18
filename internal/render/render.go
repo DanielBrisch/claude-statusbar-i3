@@ -3,6 +3,7 @@ package render
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"strings"
 	"time"
 
@@ -16,6 +17,14 @@ const (
 )
 
 const DetailCommand = "claude-statusbar detail --notify"
+
+type Markup string
+
+const (
+	MarkupNone      Markup = "none"
+	MarkupPango     Markup = "pango"
+	DefaultIconSize        = "large"
+)
 
 type Colors struct {
 	OK   string
@@ -43,8 +52,33 @@ type Options struct {
 	Label       string
 	WeeklyLabel string
 	Template    string
+	Markup      Markup
+	IconSize    string
 	Thresholds  usage.Thresholds
 	Colors      Colors
+}
+
+func (o Options) icon(label string) string {
+	if o.Markup != MarkupPango || label == "" {
+		return label
+	}
+	size := o.IconSize
+	if size == "" {
+		size = DefaultIconSize
+	}
+	return fmt.Sprintf("<span size=%q>%s</span>", size, html.EscapeString(label))
+}
+
+func (o Options) escape(s string) string {
+	if o.Markup != MarkupPango {
+		return s
+	}
+	return html.EscapeString(s)
+}
+
+func (o Options) withoutMarkup() Options {
+	o.Markup = MarkupNone
+	return o
 }
 
 type Result struct {
@@ -74,9 +108,9 @@ func Compact(s usage.Snapshot, o Options) Result {
 	}
 
 	r.FullText = strings.TrimSpace(join(
-		segment(o.Label, s.FiveHour, o.Now),
-		"│",
-		segment(o.WeeklyLabel, s.SevenDay, o.Now),
+		segment(o.icon(o.Label), s.FiveHour, o),
+		o.escape("│"),
+		segment(o.escape(o.WeeklyLabel), s.SevenDay, o),
 	))
 	return r
 }
@@ -116,7 +150,7 @@ func Waybar(s usage.Snapshot, o Options) string {
 }
 
 func Polybar(s usage.Snapshot, o Options) string {
-	r := Compact(s, o)
+	r := Compact(s, o.withoutMarkup())
 	if r.FullText == "" {
 		return ""
 	}
@@ -128,10 +162,11 @@ func Polybar(s usage.Snapshot, o Options) string {
 }
 
 func Plain(s usage.Snapshot, o Options) string {
-	return Compact(s, o).FullText
+	return Compact(s, o.withoutMarkup()).FullText
 }
 
 func JSON(s usage.Snapshot, o Options) string {
+	o = o.withoutMarkup()
 	r := Compact(s, o)
 	b, err := json.MarshalIndent(struct {
 		Text       string   `json:"text"`
@@ -194,11 +229,12 @@ func detailLine(label string, l *usage.Limit, now time.Time) string {
 		usage.FormatTimeLeft(l.TimeLeft(now)))
 }
 
-func segment(label string, l *usage.Limit, now time.Time) string {
+func segment(label string, l *usage.Limit, o Options) string {
 	body := Placeholder
-	if l != nil && !l.Expired(now) {
-		body = fmt.Sprintf("%.0f%% %s", l.UsedPercentage, usage.FormatTimeLeft(l.TimeLeft(now)))
+	if l != nil && !l.Expired(o.Now) {
+		body = fmt.Sprintf("%.0f%% %s", l.UsedPercentage, usage.FormatTimeLeft(l.TimeLeft(o.Now)))
 	}
+	body = o.escape(body)
 	if label == "" {
 		return body
 	}
@@ -241,17 +277,17 @@ func expand(tmpl string, s usage.Snapshot, o Options) string {
 		context = fmt.Sprintf("%.0f%%", s.Session.ContextUsedPct)
 	}
 	return strings.NewReplacer(
-		"{label}", o.Label,
-		"{weekly_label}", o.WeeklyLabel,
-		"{session_pct}", pct(s.FiveHour, o.Now),
-		"{session_reset}", reset(s.FiveHour, o.Now),
-		"{weekly_pct}", pct(s.SevenDay, o.Now),
-		"{weekly_reset}", reset(s.SevenDay, o.Now),
-		"{spend_pct}", pct(s.SpendLimit, o.Now),
-		"{spend_reset}", reset(s.SpendLimit, o.Now),
-		"{model}", model,
-		"{cost}", cost,
-		"{context_pct}", context,
+		"{label}", o.icon(o.Label),
+		"{weekly_label}", o.escape(o.WeeklyLabel),
+		"{session_pct}", o.escape(pct(s.FiveHour, o.Now)),
+		"{session_reset}", o.escape(reset(s.FiveHour, o.Now)),
+		"{weekly_pct}", o.escape(pct(s.SevenDay, o.Now)),
+		"{weekly_reset}", o.escape(reset(s.SevenDay, o.Now)),
+		"{spend_pct}", o.escape(pct(s.SpendLimit, o.Now)),
+		"{spend_reset}", o.escape(reset(s.SpendLimit, o.Now)),
+		"{model}", o.escape(model),
+		"{cost}", o.escape(cost),
+		"{context_pct}", o.escape(context),
 	).Replace(tmpl)
 }
 

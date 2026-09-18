@@ -116,6 +116,17 @@ The default `--label` is `✳` (U+2733, no variation selector, so it renders fro
 monospace font rather than the colour emoji font and takes the block's colour). If your
 bar font lacks it, pass any prefix you like.
 
+At bar sizes that icon lands smaller than the digits next to it. Where the bar parses
+pango markup, `--markup pango` wraps just the icon in a size tag so it grows on its own:
+
+```sh
+claude-statusbar render --format i3blocks --markup pango --icon-size x-large
+```
+
+Your bar has to be told to parse it — under i3blocks that is `markup=pango` on the block,
+see [docs/i3blocks.md](docs/i3blocks.md). Without that the tag shows up literally.
+`--format plain`, `--format json` and `--format polybar` ignore the flag entirely.
+
 Placeholders: `{label}` `{weekly_label}` `{session_pct}` `{session_reset}` `{weekly_pct}`
 `{weekly_reset}` `{spend_pct}` `{spend_reset}` `{model}` `{cost}` `{context_pct}`.
 Expired or missing windows render as `—`.

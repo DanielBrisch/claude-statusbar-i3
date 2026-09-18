@@ -244,6 +244,8 @@ type renderOptions struct {
 	label       *string
 	weeklyLabel *string
 	template    *string
+	markup      *string
+	iconSize    *string
 	warn        *float64
 	crit        *float64
 	urgent      *float64
@@ -258,6 +260,8 @@ func (a *App) renderFlags(fs *flag.FlagSet) *renderOptions {
 		label:       fs.String("label", render.DefaultLabel, "prefix for the session segment"),
 		weeklyLabel: fs.String("weekly-label", render.DefaultWeeklyLabel, "prefix for the weekly segment"),
 		template:    fs.String("template", "", "custom layout, e.g. '{label} {session_pct} {session_reset}'"),
+		markup:      fs.String("markup", string(render.MarkupNone), "none|pango; pango lets the icon be enlarged, and your bar must be told to parse it"),
+		iconSize:    fs.String("icon-size", render.DefaultIconSize, "pango size for the icon when --markup pango: small, medium, large, x-large, xx-large"),
 		warn:        fs.Float64("warn", d.Warn, "percentage that turns the block yellow"),
 		crit:        fs.Float64("crit", d.Crit, "percentage that turns the block red"),
 		urgent:      fs.Float64("urgent", d.Urgent, "percentage that marks the block urgent"),
@@ -270,8 +274,10 @@ func defaultRenderOptions() *renderOptions {
 	d := usage.DefaultThresholds()
 	c := render.DefaultColors()
 	label, weekly, empty := render.DefaultLabel, render.DefaultWeeklyLabel, ""
+	markup, iconSize := string(render.MarkupNone), render.DefaultIconSize
 	return &renderOptions{
 		label: &label, weeklyLabel: &weekly, template: &empty,
+		markup: &markup, iconSize: &iconSize,
 		warn: &d.Warn, crit: &d.Crit, urgent: &d.Urgent,
 		colorWarn: &c.Warn, colorCrit: &c.Crit,
 	}
@@ -283,6 +289,8 @@ func (a *App) options(o *renderOptions) render.Options {
 		Label:       *o.label,
 		WeeklyLabel: *o.weeklyLabel,
 		Template:    *o.template,
+		Markup:      render.Markup(*o.markup),
+		IconSize:    *o.iconSize,
 		Thresholds:  usage.Thresholds{Warn: *o.warn, Crit: *o.crit, Urgent: *o.urgent},
 		Colors:      render.Colors{Warn: *o.colorWarn, Crit: *o.colorCrit},
 	}
