@@ -9,6 +9,7 @@ import (
 )
 
 type renderFlags struct {
+	icon        string
 	label       string
 	weeklyLabel string
 	template    string
@@ -27,6 +28,7 @@ func newRenderFlags() *renderFlags {
 	d := usage.DefaultThresholds()
 	c := render.DefaultColors()
 	return &renderFlags{
+		icon:        render.DefaultIcon,
 		label:       render.DefaultLabel,
 		weeklyLabel: render.DefaultWeeklyLabel,
 		markup:      string(render.MarkupNone),
@@ -40,7 +42,8 @@ func newRenderFlags() *renderFlags {
 }
 
 func (f *renderFlags) bind(fs *flag.FlagSet) {
-	fs.StringVar(&f.label, "label", f.label, "prefix for the session segment")
+	fs.StringVar(&f.icon, "icon", f.icon, "glyph in front of the block; empty removes it")
+	fs.StringVar(&f.label, "label", f.label, "word naming the session window; empty removes it")
 	fs.StringVar(&f.weeklyLabel, "weekly-label", f.weeklyLabel, "prefix for the weekly segment")
 	fs.StringVar(&f.template, "template", f.template, "custom layout, e.g. '{label} {session_pct} {session_reset}'")
 	fs.StringVar(&f.markup, "markup", f.markup, "none|pango; pango lets the icon be enlarged, and your bar must be told to parse it")
@@ -56,6 +59,7 @@ func (f *renderFlags) bind(fs *flag.FlagSet) {
 
 func (f *renderFlags) options(now time.Time) render.Options {
 	o := render.NewOptions(now)
+	o.Icon = f.icon
 	o.Label = f.label
 	o.WeeklyLabel = f.weeklyLabel
 	o.Template = f.template

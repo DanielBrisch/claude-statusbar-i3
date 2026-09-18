@@ -21,7 +21,7 @@ func TestI3blocksEmitsFullShortAndColour(t *testing.T) {
 	if len(got) != 3 {
 		t.Fatalf("emitted %d lines, want 3: %q", len(got), got)
 	}
-	if got[0] != "✳ 90% 1h42 │ week 21% 4d" {
+	if got[0] != "✳ session 90% 1h42 │ week 21% 4d" {
 		t.Errorf("full_text = %q", got[0])
 	}
 	if got[1] != "90%│21%" {
@@ -80,7 +80,7 @@ func TestWaybarCarriesTheDetailInTheTooltip(t *testing.T) {
 	if err := json.Unmarshal([]byte(render("waybar", live(), opts()).Text), &out); err != nil {
 		t.Fatalf("Waybar output is not valid JSON: %v", err)
 	}
-	if out.Text != "✳ 63% 1h42 │ week 21% 4d" {
+	if out.Text != "✳ session 63% 1h42 │ week 21% 4d" {
 		t.Errorf("text = %q", out.Text)
 	}
 	if !strings.Contains(out.Tooltip, "Weekly") {

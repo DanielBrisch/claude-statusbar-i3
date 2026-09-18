@@ -22,7 +22,7 @@ func (r *Renderer) Block(s usage.Snapshot) Block {
 	}
 
 	level := s.Level(r.opts.Now, r.opts.Thresholds)
-	five := newSegment(r.opts.Icon(), s.FiveHour, r.opts)
+	five := newSegment(r.opts.SessionPrefix(), s.FiveHour, r.opts)
 	seven := newSegment(r.opts.Escape(r.opts.WeeklyLabel), s.SevenDay, r.opts)
 
 	b := Block{

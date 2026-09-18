@@ -9,7 +9,7 @@ import (
 )
 
 func TestBlockShowsBothWindows(t *testing.T) {
-	if got, want := block(live(), opts()).FullText, "✳ 63% 1h42 │ week 21% 4d"; got != want {
+	if got, want := block(live(), opts()).FullText, "✳ session 63% 1h42 │ week 21% 4d"; got != want {
 		t.Errorf("FullText = %q, want %q", got, want)
 	}
 }
@@ -18,7 +18,7 @@ func TestBlockPlaceholdersTheSessionButKeepsTheWeekly(t *testing.T) {
 	s := live()
 	s.FiveHour = usage.NewLimit(99, at(-time.Minute), now)
 
-	if got, want := block(s, opts()).FullText, "✳ — │ week 21% 4d"; got != want {
+	if got, want := block(s, opts()).FullText, "✳ session — │ week 21% 4d"; got != want {
 		t.Errorf("FullText = %q, want %q", got, want)
 	}
 }
@@ -102,7 +102,7 @@ func TestPangoMarkupEnlargesOnlyTheIcon(t *testing.T) {
 	o.Markup = MarkupPango
 	o.IconSize = "x-large"
 
-	want := `<span size="x-large">✳</span> 63% 1h42 │ week 21% 4d`
+	want := `<span size="x-large">✳</span> session 63% 1h42 │ week 21% 4d`
 	if got := block(live(), o).FullText; got != want {
 		t.Errorf("FullText = %q\nwant %q", got, want)
 	}
@@ -131,7 +131,7 @@ func TestWithoutPangoTheTextStaysLiteral(t *testing.T) {
 	if strings.Contains(got, "<span") {
 		t.Errorf("FullText = %q — without markup=pango a span tag would show up literally on the bar", got)
 	}
-	if got != "✳ 63% 1h42 │ week 21% 4d" {
+	if got != "✳ session 63% 1h42 │ week 21% 4d" {
 		t.Errorf("FullText = %q", got)
 	}
 }
@@ -139,7 +139,55 @@ func TestWithoutPangoTheTextStaysLiteral(t *testing.T) {
 func TestDefaultLabelCarriesNoEmojiVariationSelector(t *testing.T) {
 	for _, r := range DefaultLabel {
 		if r == '️' {
-			t.Fatalf("DefaultLabel %q carries U+FE0F, which forces emoji presentation: the glyph would come from the colour emoji font, ignore the block colour and break the monospace width", DefaultLabel)
+			t.Fatalf("DefaultLabel %q carries U+FE0F, which forces emoji presentation: the glyph would come from the colour emoji font, ignore the block colour and break the monospace width", DefaultIcon)
 		}
+	}
+}
+
+func TestTheSessionWindowIsNamedJustLikeTheWeeklyOne(t *testing.T) {
+	got := block(live(), opts()).FullText
+
+	if !strings.Contains(got, "session 63%") {
+		t.Errorf("FullText = %q — the icon says which tool, the word says which window, the same way week does", got)
+	}
+	if strings.Index(got, "session") >= strings.Index(got, "week") {
+		t.Errorf("FullText = %q, want the session segment first", got)
+	}
+}
+
+func TestTheIconAndTheWordAreSeparateKnobs(t *testing.T) {
+	o := opts()
+	o.Icon = ""
+	if got, want := block(live(), o).FullText, "session 63% 1h42 │ week 21% 4d"; got != want {
+		t.Errorf("without an icon FullText = %q, want %q", got, want)
+	}
+
+	o = opts()
+	o.Label = ""
+	if got, want := block(live(), o).FullText, "✳ 63% 1h42 │ week 21% 4d"; got != want {
+		t.Errorf("without a label FullText = %q, want %q", got, want)
+	}
+}
+
+func TestOnlyTheIconGrowsNotTheWord(t *testing.T) {
+	o := opts()
+	o.Markup = MarkupPango
+	o.IconSize = "x-large"
+
+	got := block(live(), o).FullText
+	if !strings.Contains(got, `<span size="x-large">✳</span> session`) {
+		t.Errorf("FullText = %q — the span must close before the word, or 'session' is enlarged too", got)
+	}
+	if strings.Count(got, "<span") != 1 {
+		t.Errorf("FullText = %q, want exactly one span", got)
+	}
+}
+
+func TestTemplateSeparatesIconFromLabel(t *testing.T) {
+	o := opts()
+	o.Template = "{icon}/{label}/{weekly_label}"
+
+	if got, want := block(live(), o).FullText, "✳/session/week"; got != want {
+		t.Errorf("FullText = %q, want %q", got, want)
 	}
 }
