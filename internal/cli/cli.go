@@ -261,8 +261,8 @@ func (a *App) renderFlags(fs *flag.FlagSet) *renderOptions {
 	d := usage.DefaultThresholds()
 	c := render.DefaultColors()
 	return &renderOptions{
-		label:       fs.String("label", "CC", "prefix for the session segment"),
-		weeklyLabel: fs.String("weekly-label", "S", "prefix for the weekly segment"),
+		label:       fs.String("label", render.DefaultLabel, "prefix for the session segment"),
+		weeklyLabel: fs.String("weekly-label", render.DefaultWeeklyLabel, "prefix for the weekly segment"),
 		template:    fs.String("template", "", "custom layout, e.g. '{label} {session_pct} {session_reset}'"),
 		warn:        fs.Float64("warn", d.Warn, "percentage that turns the block yellow"),
 		crit:        fs.Float64("crit", d.Crit, "percentage that turns the block red"),
@@ -275,7 +275,7 @@ func (a *App) renderFlags(fs *flag.FlagSet) *renderOptions {
 func defaultRenderOptions() *renderOptions {
 	d := usage.DefaultThresholds()
 	c := render.DefaultColors()
-	label, weekly, empty := "CC", "S", ""
+	label, weekly, empty := render.DefaultLabel, render.DefaultWeeklyLabel, ""
 	return &renderOptions{
 		label: &label, weeklyLabel: &weekly, template: &empty,
 		warn: &d.Warn, crit: &d.Crit, urgent: &d.Urgent,

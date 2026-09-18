@@ -100,14 +100,14 @@ func TestCollectStoresStateAndEchoesTheCompactLine(t *testing.T) {
 	if code := h.run(payloadJSON(63), "collect"); code != 0 {
 		t.Fatalf("collect exit = %d, stderr = %s", code, h.stderr)
 	}
-	if got, want := strings.TrimSpace(h.stdout.String()), "CC 63% 1h42 │ S 21% 4d"; got != want {
+	if got, want := strings.TrimSpace(h.stdout.String()), "session 63% 1h42 │ week 21% 4d"; got != want {
 		t.Errorf("collect stdout = %q, want %q", got, want)
 	}
 
 	if code := h.run("", "render", "--format", "plain"); code != 0 {
 		t.Fatalf("render exit = %d, stderr = %s", code, h.stderr)
 	}
-	if got, want := strings.TrimSpace(h.stdout.String()), "CC 63% 1h42 │ S 21% 4d"; got != want {
+	if got, want := strings.TrimSpace(h.stdout.String()), "session 63% 1h42 │ week 21% 4d"; got != want {
 		t.Errorf("render stdout = %q, want %q", got, want)
 	}
 }
@@ -187,7 +187,7 @@ func TestRenderWaybarIsValidJSON(t *testing.T) {
 	if err := json.Unmarshal(h.stdout.Bytes(), &out); err != nil {
 		t.Fatalf("waybar output is not JSON: %v\n%s", err, h.stdout)
 	}
-	if out["text"] != "CC 63% 1h42 │ S 21% 4d" {
+	if out["text"] != "session 63% 1h42 │ week 21% 4d" {
 		t.Errorf("text = %v", out["text"])
 	}
 }
@@ -373,7 +373,7 @@ func TestAFailingNotificationNeverContaminatesTheBlock(t *testing.T) {
 	if strings.Contains(h.stdout.String(), "Weekly") || strings.Contains(h.stdout.String(), notificationTitle) {
 		t.Errorf("the notification leaked into the block:\n%s", h.stdout)
 	}
-	if lines[0] != "CC 63% 1h42 │ S 21% 4d" {
+	if lines[0] != "session 63% 1h42 │ week 21% 4d" {
 		t.Errorf("full_text = %q", lines[0])
 	}
 	if !strings.Contains(h.stderr.String(), "Weekly") {

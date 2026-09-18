@@ -18,8 +18,8 @@ func at(d time.Duration) time.Time { return now.Add(d) }
 func opts() Options {
 	return Options{
 		Now:         now,
-		Label:       "CC",
-		WeeklyLabel: "S",
+		Label:       DefaultLabel,
+		WeeklyLabel: DefaultWeeklyLabel,
 		Thresholds:  usage.DefaultThresholds(),
 		Colors:      DefaultColors(),
 	}
@@ -39,7 +39,7 @@ func live() usage.Snapshot {
 
 func TestCompactShowsBothWindows(t *testing.T) {
 	got := Compact(live(), opts()).FullText
-	want := "CC 63% 1h42 │ S 21% 4d"
+	want := "session 63% 1h42 │ week 21% 4d"
 	if got != want {
 		t.Errorf("Compact() = %q, want %q", got, want)
 	}
@@ -50,7 +50,7 @@ func TestCompactPlaceholdersTheSessionButKeepsTheWeekly(t *testing.T) {
 	s.FiveHour = &usage.Limit{UsedPercentage: 99, ResetsAt: at(-time.Minute)}
 
 	got := Compact(s, opts()).FullText
-	want := "CC — │ S 21% 4d"
+	want := "session — │ week 21% 4d"
 	if got != want {
 		t.Errorf("Compact() = %q, want %q", got, want)
 	}
@@ -107,7 +107,7 @@ func TestI3blocksEmitsFullShortAndColour(t *testing.T) {
 	if len(lines) != 3 {
 		t.Fatalf("I3blocks emitted %d lines, want 3: %q", len(lines), lines)
 	}
-	if lines[0] != "CC 90% 1h42 │ S 21% 4d" {
+	if lines[0] != "session 90% 1h42 │ week 21% 4d" {
 		t.Errorf("full_text = %q", lines[0])
 	}
 	if lines[1] != "90%│21%" {
@@ -144,11 +144,11 @@ func TestWaybarCarriesTheDetailInTheTooltip(t *testing.T) {
 	if err := json.Unmarshal([]byte(Waybar(live(), opts())), &out); err != nil {
 		t.Fatalf("Waybar output is not valid JSON: %v", err)
 	}
-	if out.Text != "CC 63% 1h42 │ S 21% 4d" {
+	if out.Text != "session 63% 1h42 │ week 21% 4d" {
 		t.Errorf("text = %q", out.Text)
 	}
-	if !strings.Contains(out.Tooltip, "Opus") {
-		t.Errorf("tooltip = %q, want it to mention the model", out.Tooltip)
+	if !strings.Contains(out.Tooltip, "Weekly") {
+		t.Errorf("tooltip = %q, want the breakdown", out.Tooltip)
 	}
 	if out.Class != "warn" {
 		t.Errorf("class = %q, want %q", out.Class, "warn")
@@ -234,5 +234,36 @@ func TestDetailLinePadsByRuneNotByte(t *testing.T) {
 	if col(ascii) != col(multibyte) {
 		t.Errorf("percentage column differs: ascii=%d multibyte=%d — padding must count runes, not bytes\n%s%s",
 			col(ascii), col(multibyte), ascii, multibyte)
+	}
+}
+
+func TestDetailCarriesOnlyAccountWideFacts(t *testing.T) {
+	s := live()
+
+	got := Detail(s, opts())
+	for _, leaked := range []string{"Opus", "2.41", "Context", "45m"} {
+		if strings.Contains(got, leaked) {
+			t.Errorf("Detail() leaked %q — per-session figures belong to whichever session wrote last, which is arbitrary with several open:\n%s", leaked, got)
+		}
+	}
+	for _, want := range []string{"5h window", "Weekly", "as of"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("Detail() is missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestJSONStillExposesTheSessionForCustomFormats(t *testing.T) {
+	var out struct {
+		Session *struct {
+			Model   string  `json:"model"`
+			CostUSD float64 `json:"cost_usd"`
+		} `json:"session"`
+	}
+	if err := json.Unmarshal([]byte(JSON(live(), opts())), &out); err != nil {
+		t.Fatalf("JSON output is not valid: %v", err)
+	}
+	if out.Session == nil || out.Session.Model != "Opus" {
+		t.Errorf("session = %+v, want it still available to --format json and --template", out.Session)
 	}
 }

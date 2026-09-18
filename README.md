@@ -1,12 +1,12 @@
-# claude-statusbar
+# claude-usage-status-i3
 
 Claude Code's `/usage` numbers on your status bar.
 
 ```
-… TEMP 52°C │ CC 63% 1h42 │ S 21% 4d │ 🔊 40% …
-                └── 5-hour window       └── weekly window
-                    63% used, resets         21% used, resets
-                    in 1h42                  in 4 days
+… TEMP 52°C │ session 63% 1h42 │ week 21% 4d │ 🔊 40% …
+              └── 5-hour window   └── weekly window
+                  63% used,           21% used,
+                  resets in 1h42      resets in 4 days
 ```
 
 Left-click the block for the full breakdown:
@@ -14,10 +14,13 @@ Left-click the block for the full breakdown:
 ```
 5h window     63%  resets Sep 18 13:42 (1h42)
 Weekly        21%  resets Sep 22 16:00 (4d)
-Context       18%  of 200k
-Opus · $2.41 · 45m
 as of 11:58
 ```
+
+Both figures are account-wide. Per-session numbers — model, cost, context — are recorded
+but deliberately kept out of the bar and the breakdown: with several Claude Code sessions
+open, they describe whichever one wrote last, which is not the one you are looking at.
+Reach them through `--format json` or a `--template` if you want them anyway.
 
 Works with **i3blocks**, **waybar**, **polybar**, or anything that can run a command
 (`--format json` / `--format plain`).
@@ -94,7 +97,7 @@ the per-bar docs.
 ### Appearance
 
 ```sh
-claude-statusbar render --label CC --weekly-label S --warn 60 --crit 85 --urgent 95
+claude-statusbar render --label session --weekly-label week --warn 60 --crit 85 --urgent 95
 claude-statusbar render --color-warn '#E5C07B' --color-crit '#E06C75'
 ```
 

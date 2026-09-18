@@ -9,7 +9,11 @@ import (
 	"github.com/DanielBrisch/claude-usage-status-i3/internal/usage"
 )
 
-const Placeholder = "—"
+const (
+	Placeholder        = "—"
+	DefaultLabel       = "session"
+	DefaultWeeklyLabel = "week"
+)
 
 const DetailCommand = "claude-statusbar detail --notify"
 
@@ -175,14 +179,6 @@ func Detail(s usage.Snapshot, o Options) string {
 	b.WriteString(detailLine("Weekly", s.SevenDay, o.Now))
 	if s.SpendLimit != nil {
 		b.WriteString(detailLine("Spend", s.SpendLimit, o.Now))
-	}
-	if s.Session != nil {
-		if s.Session.ContextWindowSize > 0 {
-			fmt.Fprintf(&b, "%-11s %5s  of %dk\n", "Context",
-				fmt.Sprintf("%.0f%%", s.Session.ContextUsedPct), s.Session.ContextWindowSize/1000)
-		}
-		fmt.Fprintf(&b, "%s · $%.2f · %s\n", s.Session.Model, s.Session.CostUSD,
-			usage.FormatTimeLeft(s.Session.Duration))
 	}
 	fmt.Fprintf(&b, "as of %s\n", stampTime(s.UpdatedAt))
 	return b.String()
