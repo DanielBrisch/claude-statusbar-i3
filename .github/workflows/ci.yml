@@ -9,6 +9,7 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
@@ -16,7 +17,14 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: stable
-      - run: gofmt -l . | tee /dev/stderr | (! read)
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "these files are not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
       - run: go vet ./...
       - run: go test -race ./...
 
