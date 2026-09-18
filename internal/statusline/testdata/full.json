@@ -1,0 +1,29 @@
+{
+  "cwd": "/home/daniel/proj",
+  "session_id": "abc123",
+  "transcript_path": "/home/daniel/.claude/projects/-home-daniel/abc123.jsonl",
+  "model": { "id": "claude-opus-5", "display_name": "Opus" },
+  "workspace": { "current_dir": "/home/daniel/proj", "project_dir": "/home/daniel/proj" },
+  "version": "2.1.276",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 1.23,
+    "total_duration_ms": 45000,
+    "total_api_duration_ms": 2300,
+    "total_lines_added": 156,
+    "total_lines_removed": 23
+  },
+  "context_window": {
+    "total_input_tokens": 15500,
+    "total_output_tokens": 1200,
+    "context_window_size": 200000,
+    "used_percentage": 8,
+    "remaining_percentage": 92
+  },
+  "exceeds_200k_tokens": false,
+  "rate_limits": {
+    "five_hour": { "used_percentage": 23.5, "resets_at": 1738425600 },
+    "seven_day": { "used_percentage": 41.2, "resets_at": 1738857600 },
+    "spend_limit": { "used_percentage": 62.8, "resets_at": 1740787200 }
+  }
+}

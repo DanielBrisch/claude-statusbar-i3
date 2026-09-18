@@ -1,0 +1,7 @@
+{
+  "session_id": "ghi789",
+  "model": { "display_name": "Sonnet" },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 0, "resets_at": 1738425600 }
+  }
+}
