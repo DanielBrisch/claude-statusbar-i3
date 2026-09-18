@@ -14,10 +14,21 @@ appear. Reload with `i3-msg restart`.
 The countdown is computed at render time from the reset timestamp, so `interval=10` keeps
 it ticking without Claude Code doing anything.
 
-## Click
+## Clicking does nothing
 
-Left-click sends the breakdown as a desktop notification (`dunstify`, falling back to
-`notify-send`). No extra configuration — the block reads `$BLOCK_BUTTON` itself.
+Deliberately. The block already carries both windows, so there is nothing a click could
+usefully add. For the absolute reset times and the spend limit, run:
+
+```sh
+claude-statusbar detail
+```
+
+If you would rather have the old notification, wire it yourself — i3blocks exports
+`$BLOCK_BUTTON`:
+
+```ini
+command=[ "$BLOCK_BUTTON" = 1 ] && claude-statusbar detail --notify; claude-statusbar render --format i3blocks
+```
 
 ## Instant refresh (optional)
 

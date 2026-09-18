@@ -139,12 +139,6 @@ func (a *App) render(args []string) (int, error) {
 	}
 	opts := a.options(o)
 
-	if *format == "i3blocks" && a.env("BLOCK_BUTTON") == "1" {
-		if err := a.notifier(a.Stderr).Send(notificationTitle, render.Detail(snap, opts)); err != nil {
-			fmt.Fprintln(a.Stderr, err)
-		}
-	}
-
 	var out string
 	switch *format {
 	case "i3blocks":

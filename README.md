@@ -3,13 +3,15 @@
 Claude Code's `/usage` numbers on your status bar.
 
 ```
-… TEMP 52°C │ session 63% 1h42 │ week 21% 4d │ 🔊 40% …
-              └── 5-hour window   └── weekly window
-                  63% used,           21% used,
-                  resets in 1h42      resets in 4 days
+… TEMP 52°C │ ✳ 63% 1h42 │ week 21% 4d │ 🔊 40% …
+              └── 5-hour window └── weekly window
+                  63% used,         21% used,
+                  resets in 1h42    resets in 4 days
 ```
 
-Left-click the block for the full breakdown:
+The block is meant to be read at a glance and nothing else: everything it knows is
+already on the bar. Bars that give it away for free show more on hover, and
+`claude-statusbar detail` prints the same thing anywhere:
 
 ```
 5h window     63%  resets Sep 18 13:42 (1h42)
@@ -97,7 +99,7 @@ the per-bar docs.
 ### Appearance
 
 ```sh
-claude-statusbar render --label session --weekly-label week --warn 60 --crit 85 --urgent 95
+claude-statusbar render --label '✳' --weekly-label week --warn 60 --crit 85 --urgent 95
 claude-statusbar render --color-warn '#E5C07B' --color-crit '#E06C75'
 ```
 
@@ -109,6 +111,10 @@ Or lay it out yourself:
 ```sh
 claude-statusbar render --template '{session_pct} ({session_reset}) · week {weekly_pct}'
 ```
+
+The default `--label` is `✳` (U+2733, no variation selector, so it renders from your
+monospace font rather than the colour emoji font and takes the block's colour). If your
+bar font lacks it, pass any prefix you like.
 
 Placeholders: `{label}` `{weekly_label}` `{session_pct}` `{session_reset}` `{weekly_pct}`
 `{weekly_reset}` `{spend_pct}` `{spend_reset}` `{model}` `{cost}` `{context_pct}`.
@@ -124,8 +130,9 @@ These are design limits, not bugs:
 - **API key, Bedrock and Vertex logins get no `rate_limits`** from Claude Code, so the
   block stays empty. `doctor` will tell you that is what happened.
 - **`statusLine` is a single slot** in `settings.json`. Use `--passthrough` to keep yours.
-- **i3bar has no hover events**, so under i3blocks the breakdown is on left-click. Waybar
-  gets a real tooltip.
+- **i3bar has no hover events.** Waybar gets a real tooltip and polybar a click action;
+  under i3blocks the block is all you get, which is why it carries both windows itself.
+  `claude-statusbar detail` is always there when you want the absolute reset times.
 
 ## State file
 

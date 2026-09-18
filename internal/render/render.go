@@ -11,7 +11,7 @@ import (
 
 const (
 	Placeholder        = "—"
-	DefaultLabel       = "session"
+	DefaultLabel       = "✳"
 	DefaultWeeklyLabel = "week"
 )
 

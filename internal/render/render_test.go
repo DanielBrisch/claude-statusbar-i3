@@ -39,7 +39,7 @@ func live() usage.Snapshot {
 
 func TestCompactShowsBothWindows(t *testing.T) {
 	got := Compact(live(), opts()).FullText
-	want := "session 63% 1h42 │ week 21% 4d"
+	want := "✳ 63% 1h42 │ week 21% 4d"
 	if got != want {
 		t.Errorf("Compact() = %q, want %q", got, want)
 	}
@@ -50,7 +50,7 @@ func TestCompactPlaceholdersTheSessionButKeepsTheWeekly(t *testing.T) {
 	s.FiveHour = &usage.Limit{UsedPercentage: 99, ResetsAt: at(-time.Minute)}
 
 	got := Compact(s, opts()).FullText
-	want := "session — │ week 21% 4d"
+	want := "✳ — │ week 21% 4d"
 	if got != want {
 		t.Errorf("Compact() = %q, want %q", got, want)
 	}
@@ -107,7 +107,7 @@ func TestI3blocksEmitsFullShortAndColour(t *testing.T) {
 	if len(lines) != 3 {
 		t.Fatalf("I3blocks emitted %d lines, want 3: %q", len(lines), lines)
 	}
-	if lines[0] != "session 90% 1h42 │ week 21% 4d" {
+	if lines[0] != "✳ 90% 1h42 │ week 21% 4d" {
 		t.Errorf("full_text = %q", lines[0])
 	}
 	if lines[1] != "90%│21%" {
@@ -144,7 +144,7 @@ func TestWaybarCarriesTheDetailInTheTooltip(t *testing.T) {
 	if err := json.Unmarshal([]byte(Waybar(live(), opts())), &out); err != nil {
 		t.Fatalf("Waybar output is not valid JSON: %v", err)
 	}
-	if out.Text != "session 63% 1h42 │ week 21% 4d" {
+	if out.Text != "✳ 63% 1h42 │ week 21% 4d" {
 		t.Errorf("text = %q", out.Text)
 	}
 	if !strings.Contains(out.Tooltip, "Weekly") {
@@ -265,5 +265,13 @@ func TestJSONStillExposesTheSessionForCustomFormats(t *testing.T) {
 	}
 	if out.Session == nil || out.Session.Model != "Opus" {
 		t.Errorf("session = %+v, want it still available to --format json and --template", out.Session)
+	}
+}
+
+func TestDefaultLabelCarriesNoEmojiVariationSelector(t *testing.T) {
+	for _, r := range DefaultLabel {
+		if r == '\ufe0f' {
+			t.Fatalf("DefaultLabel %q carries U+FE0F, which forces emoji presentation: the glyph would come from the colour emoji font, ignore the block colour and break the monospace width", DefaultLabel)
+		}
 	}
 }
